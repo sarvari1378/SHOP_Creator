@@ -1,0 +1,51 @@
+name: Add Item to JSON
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Title of the item'
+        required: true
+        type: string
+      description:
+        description: 'Description of the item'
+        required: true
+        type: string
+      image:
+        description: 'Image URL of the item'
+        required: true
+        type: string
+
+jobs:
+  update_json:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Add item to data.json
+      run: |
+        ITEM_TITLE="${{ github.event.inputs.title }}"
+        ITEM_DESC="${{ github.event.inputs.description }}"
+        ITEM_IMG="${{ github.event.inputs.image }}"
+
+        # Read the existing data.json
+        DATA_FILE="Data.json"
+        json_content=$(cat $DATA_FILE)
+
+        # Add the new item
+        new_item="{\"title\":\"$ITEM_TITLE\",\"description\":\"$ITEM_DESC\",\"image\":\"$ITEM_IMG\"}"
+        
+        # Append the new item to the JSON array
+        new_json=$(echo "$json_content" | jq ".items += [$new_item]")
+
+        # Write the updated JSON to the file
+        echo "$new_json" > $DATA_FILE
+
+    - name: Commit changes
+      run: |
+        git config --global user.email "your-email@example.com"
+        git config --global user.name "Your Name"
+        git add Data.json
+        git commit -m "Added new item: ${{ github.event.inputs.title }}"
+        git push

@@ -12,30 +12,45 @@ on:
         required: true
         type: string
       image:
-        description: 'Image URL of the item'
+        description: 'Image file to upload (GitHub will automatically handle this)'
         required: true
         type: string
 
 jobs:
   update_json:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-      
+
+    - name: Upload image to Images folder
+      uses: actions/upload-artifact@v3
+      with:
+        name: image
+        path: ${{ github.event.inputs.image }}
+
+    - name: Get raw URL of uploaded image
+      id: image_url
+      run: |
+        IMAGE_PATH="${{ github.event.inputs.image }}"
+        IMAGE_NAME=$(basename "$IMAGE_PATH")
+        IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${IMAGE_NAME}"
+        echo "::set-output name=image_url::$IMAGE_RAW_URL"
+
     - name: Add item to data.json
       run: |
         ITEM_TITLE="${{ github.event.inputs.title }}"
         ITEM_DESC="${{ github.event.inputs.description }}"
-        ITEM_IMG="${{ github.event.inputs.image }}"
+        ITEM_IMG="${{ steps.image_url.outputs.image_url }}"
 
         # Read the existing data.json
         DATA_FILE="Data.json"
         json_content=$(cat $DATA_FILE)
 
-        # Add the new item
+        # Add the new item with the image URL
         new_item="{\"title\":\"$ITEM_TITLE\",\"description\":\"$ITEM_DESC\",\"image\":\"$ITEM_IMG\"}"
-        
+
         # Append the new item to the JSON array
         new_json=$(echo "$json_content" | jq ".items += [$new_item]")
 

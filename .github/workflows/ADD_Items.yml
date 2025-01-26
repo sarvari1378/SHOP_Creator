@@ -12,7 +12,7 @@ on:
         required: true
         type: string
       image:
-        description: 'Image file to upload (GitHub will automatically handle this)'
+        description: 'Image filename (from Images folder)'
         required: true
         type: string
 
@@ -24,17 +24,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Upload image to Images folder
-      uses: actions/upload-artifact@v3
-      with:
-        name: image
-        path: ${{ github.event.inputs.image }}
+    - name: Get list of image files
+      id: image_list
+      run: |
+        echo "Fetching list of image files in the Images folder..."
+        IMAGE_FILES=$(ls Images)
+        echo "::set-output name=images::$(echo $IMAGE_FILES | tr ' ' '\n')"
 
-    - name: Get raw URL of uploaded image
+    - name: Get raw URL of selected image
       id: image_url
       run: |
-        IMAGE_PATH="${{ github.event.inputs.image }}"
-        IMAGE_NAME=$(basename "$IMAGE_PATH")
+        IMAGE_NAME="${{ github.event.inputs.image }}"
         IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${IMAGE_NAME}"
         echo "::set-output name=image_url::$IMAGE_RAW_URL"
 

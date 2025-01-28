@@ -24,13 +24,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Get list of image files
-      id: image_list
-      run: |
-        echo "Fetching list of image files in the Images folder..."
-        IMAGE_FILES=$(ls Images)
-        echo "::set-output name=images::$(echo $IMAGE_FILES | tr ' ' '\n')"
-
     - name: Get raw URL of selected image
       id: image_url
       run: |
@@ -42,22 +35,25 @@ jobs:
       run: |
         ITEM_TITLE="${{ github.event.inputs.title }}"
         ITEM_DESC="${{ github.event.inputs.description }}"
-        # Escape newlines in the description for JSON compatibility
-        ITEM_DESC=$(echo "$ITEM_DESC" | sed ':a;N;$!ba;s/\n/\\n/g')
         ITEM_IMG="${{ steps.image_url.outputs.image_url }}"
 
-        # Read the existing data.json
+        # Read the existing Data.json
         DATA_FILE="Data.json"
         json_content=$(cat $DATA_FILE)
 
-        # Add the new item with the image URL
-        new_item="{\"title\":\"$ITEM_TITLE\",\"description\":\"$ITEM_DESC\",\"image\":\"$ITEM_IMG\"}"
+        # Format the new item with the description on multiple lines
+        new_item=$(
+          jq -n --arg title "$ITEM_TITLE" \
+                --arg description "$ITEM_DESC" \
+                --arg image "$ITEM_IMG" \
+                '{title: $title, description: $description, image: $image}'
+        )
 
         # Append the new item to the JSON array
         new_json=$(echo "$json_content" | jq ".items += [$new_item]")
 
         # Write the updated JSON to the file
-        echo "$new_json" > $DATA_FILE
+        echo "$new_json" | jq '.' > $DATA_FILE
 
     - name: Commit changes
       run: |

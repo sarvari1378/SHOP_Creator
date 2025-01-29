@@ -39,18 +39,19 @@ jobs:
       run: |
         ITEM_TITLE="${{ github.event.inputs.title }}"
 
-        extract_and_format() {
+        add_newline_before_words() {
           local input="$1"
-          local formatted_output=""
-          
-          # Split input by key-value pairs and add a newline after each part
-          formatted_output=$(echo "$input" | sed -E 's/([a-zA-Z0-9]+:[^ ]+)/\1\n/g')
+          local words_to_add_newline=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")  # Add words here that should trigger a newline before them
 
-          echo "$formatted_output"
+          for word in "${words_to_add_newline[@]}"; do
+            input=$(echo "$input" | sed "s/\b$word\b/\n$word/g")
+          done
+
+          echo "$input"
         }
 
-        ITEM_DESC_EN=$(extract_and_format "${{ github.event.inputs.english_description }}")
-        ITEM_DESC_FA=$(extract_and_format "${{ github.event.inputs.persian_description }}")
+        ITEM_DESC_EN=$(add_newline_before_words "${{ github.event.inputs.english_description }}")
+        ITEM_DESC_FA=$(add_newline_before_words "${{ github.event.inputs.persian_description }}")
         ITEM_IMG="$image_url"
 
         DATA_FILE="Data.json"

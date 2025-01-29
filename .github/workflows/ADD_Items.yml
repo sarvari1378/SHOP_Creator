@@ -43,16 +43,8 @@ jobs:
           local input="$1"
           local formatted_output=""
           
-          # Replace commas and semicolons with English equivalents
-          while IFS= read -r line; do
-            if [[ "$line" =~ ^([^:]+):(.+)$ ]]; then
-              key="${BASH_REMATCH[1]}"
-              value="${BASH_REMATCH[2]}"
-              formatted_output+="$key: $value"$'\n'
-            else
-              formatted_output+="$line"$'\n'
-            fi
-          done <<< "$(echo "$input" | tr '،' ',' | tr '؛' ';')" 
+          # Split input by key-value pairs and add a newline after each part
+          formatted_output=$(echo "$input" | sed -E 's/([a-zA-Z0-9]+:[^ ]+)/\1\n/g')
 
           echo "$formatted_output"
         }

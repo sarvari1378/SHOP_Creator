@@ -7,8 +7,12 @@ on:
         description: 'Title of the item'
         required: true
         type: string
-      description:
-        description: 'Description of the item (supports multiple lines)'
+      english_description:
+        description: 'Description in English'
+        required: true
+        type: string
+      persian_description:
+        description: 'Description in Persian'
         required: true
         type: string
       image:
@@ -29,30 +33,27 @@ jobs:
       run: |
         IMAGE_NAME="${{ github.event.inputs.image }}"
         IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${IMAGE_NAME}"
-        echo "::set-output name=image_url::$IMAGE_RAW_URL"
+        echo "image_url=$IMAGE_RAW_URL" >> $GITHUB_ENV
 
     - name: Add item to data.json
       run: |
         ITEM_TITLE="${{ github.event.inputs.title }}"
-        ITEM_DESC="${{ github.event.inputs.description }}"
-        ITEM_IMG="${{ steps.image_url.outputs.image_url }}"
+        ITEM_DESC_EN="${{ github.event.inputs.english_description }}"
+        ITEM_DESC_FA="${{ github.event.inputs.persian_description }}"
+        ITEM_IMG="$image_url"
 
-        # Read the existing Data.json
         DATA_FILE="Data.json"
         json_content=$(cat $DATA_FILE)
 
-        # Format the new item with the description on multiple lines
         new_item=$(
           jq -n --arg title "$ITEM_TITLE" \
-                --arg description "$ITEM_DESC" \
+                --arg englishDescription "$ITEM_DESC_EN" \
+                --arg persianDescription "$ITEM_DESC_FA" \
                 --arg image "$ITEM_IMG" \
-                '{title: $title, description: $description, image: $image}'
+                '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}'
         )
 
-        # Append the new item to the JSON array
         new_json=$(echo "$json_content" | jq ".items += [$new_item]")
-
-        # Write the updated JSON to the file
         echo "$new_json" | jq '.' > $DATA_FILE
 
     - name: Commit changes

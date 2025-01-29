@@ -8,11 +8,11 @@ on:
         required: true
         type: string
       english_description:
-        description: 'Description in English (Single-line input, auto-formats)'
+        description: 'Description in English'
         required: true
         type: string
       persian_description:
-        description: 'Description in Persian (Single-line input, auto-formats)'
+        description: 'Description in Persian'
         required: true
         type: string
       image:
@@ -40,7 +40,7 @@ jobs:
         ITEM_TITLE="${{ github.event.inputs.title }}"
 
         format_description() {
-          echo "$1" | LC_ALL=C sed -E 's/([^:]+):/\n\1:/g'
+          echo "$1" | sed -E 's/([^:]+): */\n\1: /g'
         }
 
         ITEM_DESC_EN=$(format_description "${{ github.event.inputs.english_description }}")

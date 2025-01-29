@@ -43,6 +43,7 @@ jobs:
           local input="$1"
           local formatted_output=""
           
+          # Replace commas and semicolons with English equivalents
           while IFS= read -r line; do
             if [[ "$line" =~ ^([^:]+):(.+)$ ]]; then
               key="${BASH_REMATCH[1]}"
@@ -71,6 +72,7 @@ jobs:
                 '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}'
         )
 
+        # Add the new item to the existing JSON file
         new_json=$(echo "$json_content" | jq ".items += [$new_item]")
         echo "$new_json" | jq '.' > $DATA_FILE
 

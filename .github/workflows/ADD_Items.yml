@@ -8,11 +8,11 @@ on:
         required: true
         type: string
       english_description:
-        description: 'Description in English'
+        description: 'Description in English (Single-line input, auto-formats)'
         required: true
         type: string
       persian_description:
-        description: 'Description in Persian'
+        description: 'Description in Persian (Single-line input, auto-formats)'
         required: true
         type: string
       image:
@@ -39,12 +39,25 @@ jobs:
       run: |
         ITEM_TITLE="${{ github.event.inputs.title }}"
 
-        format_description() {
-          echo "$1" | sed -E 's/([^:]+): */\n\1: /g'
+        extract_and_format() {
+          local input="$1"
+          local formatted_output=""
+          
+          while IFS= read -r line; do
+            if [[ "$line" =~ ^([^:]+):(.+)$ ]]; then
+              key="${BASH_REMATCH[1]}"
+              value="${BASH_REMATCH[2]}"
+              formatted_output+="$key: $value"$'\n'
+            else
+              formatted_output+="$line"$'\n'
+            fi
+          done <<< "$(echo "$input" | tr '،' ',' | tr '؛' ';')" 
+
+          echo "$formatted_output"
         }
 
-        ITEM_DESC_EN=$(format_description "${{ github.event.inputs.english_description }}")
-        ITEM_DESC_FA=$(format_description "${{ github.event.inputs.persian_description }}")
+        ITEM_DESC_EN=$(extract_and_format "${{ github.event.inputs.english_description }}")
+        ITEM_DESC_FA=$(extract_and_format "${{ github.event.inputs.persian_description }}")
         ITEM_IMG="$image_url"
 
         DATA_FILE="Data.json"

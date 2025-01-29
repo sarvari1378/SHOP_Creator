@@ -36,31 +36,30 @@ jobs:
         echo "image_url=$IMAGE_RAW_URL" >> $GITHUB_ENV
 
     - name: Format descriptions and add item to data.json
-    run: |
-      ITEM_TITLE="${{ github.event.inputs.title }}"
+      run: |
+        ITEM_TITLE="${{ github.event.inputs.title }}"
 
-      format_description() {
-      echo "$1" | LC_ALL=C sed -E 's/([^:]+):/\n\1:/g'
-      }
+        format_description() {
+          echo "$1" | LC_ALL=C sed -E 's/([^:]+):/\n\1:/g'
+        }
 
-      ITEM_DESC_EN=$(format_description "${{ github.event.inputs.english_description }}")
-      ITEM_DESC_FA=$(format_description "${{ github.event.inputs.persian_description }}")
-      ITEM_IMG="$image_url"
+        ITEM_DESC_EN=$(format_description "${{ github.event.inputs.english_description }}")
+        ITEM_DESC_FA=$(format_description "${{ github.event.inputs.persian_description }}")
+        ITEM_IMG="$image_url"
 
-      DATA_FILE="Data.json"
-      json_content=$(cat $DATA_FILE)
+        DATA_FILE="Data.json"
+        json_content=$(cat $DATA_FILE)
 
-      new_item=$(
-      jq -n --arg title "$ITEM_TITLE" \
-            --arg englishDescription "$ITEM_DESC_EN" \
-            --arg persianDescription "$ITEM_DESC_FA" \
-            --arg image "$ITEM_IMG" \
-            '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}'
-      )
+        new_item=$(
+          jq -n --arg title "$ITEM_TITLE" \
+                --arg englishDescription "$ITEM_DESC_EN" \
+                --arg persianDescription "$ITEM_DESC_FA" \
+                --arg image "$ITEM_IMG" \
+                '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}'
+        )
 
-      new_json=$(echo "$json_content" | jq ".items += [$new_item]")
-      echo "$new_json" | jq '.' > $DATA_FILE
-
+        new_json=$(echo "$json_content" | jq ".items += [$new_item]")
+        echo "$new_json" | jq '.' > $DATA_FILE
 
     - name: Commit changes
       run: |

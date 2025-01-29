@@ -8,11 +8,11 @@ on:
         required: true
         type: string
       english_description:
-        description: 'Description in English'
+        description: 'Description in English (Single-line input, auto-formats)'
         required: true
         type: string
       persian_description:
-        description: 'Description in Persian'
+        description: 'Description in Persian (Single-line input, auto-formats)'
         required: true
         type: string
       image:
@@ -35,11 +35,16 @@ jobs:
         IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${IMAGE_NAME}"
         echo "image_url=$IMAGE_RAW_URL" >> $GITHUB_ENV
 
-    - name: Add item to data.json
+    - name: Format descriptions and add item to data.json
       run: |
         ITEM_TITLE="${{ github.event.inputs.title }}"
-        ITEM_DESC_EN=$(printf "%s" "${{ github.event.inputs.english_description }}")
-        ITEM_DESC_FA=$(printf "%s" "${{ github.event.inputs.persian_description }}")
+
+        format_description() {
+          echo "$1" | sed -E 's/([a-zA-Zآ-یء-ي]+):/\n\1:/g'
+        }
+
+        ITEM_DESC_EN=$(format_description "${{ github.event.inputs.english_description }}")
+        ITEM_DESC_FA=$(format_description "${{ github.event.inputs.persian_description }}")
         ITEM_IMG="$image_url"
 
         DATA_FILE="Data.json"

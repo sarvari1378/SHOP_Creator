@@ -38,8 +38,8 @@ jobs:
     - name: Add item to data.json
       run: |
         ITEM_TITLE="${{ github.event.inputs.title }}"
-        ITEM_DESC_EN="${{ github.event.inputs.english_description }}"
-        ITEM_DESC_FA="${{ github.event.inputs.persian_description }}"
+        ITEM_DESC_EN=$(printf "%s" "${{ github.event.inputs.english_description }}")
+        ITEM_DESC_FA=$(printf "%s" "${{ github.event.inputs.persian_description }}")
         ITEM_IMG="$image_url"
 
         DATA_FILE="Data.json"

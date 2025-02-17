@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.4/piexif.min.js"></script>
+
+    <title>Image Number Overlay</title>
+    <style>
+        @font-face {
+            font-family: 'EnglishFont';
+            src: url('https://sarvari1378.github.io/Files/Fonts/MyriadProRegular.ttf');
+        }
+        
+        @font-face {
+            font-family: 'ArabicFont';
+            src: url('https://sarvari1378.github.io/Files/Fonts/BBaran.ttf');
+        }
+        
+        @font-face {
+            font-family: 'CodeFont';
+            src: url('https://sarvari1378.github.io/Files/Fonts/BookAntiqua.ttf');
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+
+
+        .preview-container {
+            display: flex;
+            flex-direction: column; /* Arrange items in a column */
+            align-items: center; /* Center horizontally */
+            justify-content: center; /* Center vertically */
+            position: fixed; /* Fixed position */
+            top: 20px; /* Space from top of the page */
+            width: 100%;
+            height: calc(50vh - 20px); /* Adjust height to accommodate top margin */
+            padding: 10px;
+            box-sizing: border-box; /* Include padding in width */
+            
+        }
+
+        .container {
+            margin-top: 700px; /* Add space below the fixed container */
+            text-align: center;
+        }
+
+        input, button {
+            margin: 10px 0;
+        }
+
+        
+        input {
+            margin: 10px 0;
+            padding: 10px;
+            width: 90%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        
+        canvas {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            max-width: 50%;
+        }
+
+        #buttonContainer {
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            height: 100vh; /* Full viewport height */
+        }
+
+        #downloadBtn {
+            background-color: #4CAF50; /* Green background */
+            color: white; /* White text */
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s, color 0.3s; /* Smooth transitions */
+        }
+
+        #downloadBtn:hover {
+            background-color: white; /* White background on hover */
+            color: #4CAF50; /* Green text on hover */
+            border: 2px solid #4CAF50; /* Green border on hover */
+        }
+
+    </style>
+</head>
+<body>
+    <div class="preview-container">
+        <canvas id="canvas"></canvas>
+        <button id="downloadBtn">Download Image</button>
+    </div>
+    <div class="container">
+        <h2>Qr Code Image</h2>
+        <input type="file" id="ringImageInput" accept="image/*" data-x="328" data-y="1207" data-width="400" data-height="400" data-mode="darken">
+        
+        <h2>Ring Image</h2>
+        <input type="file" id="circleImageInput" accept="image/*" data-x="1747" data-y="50" data-width="865" data-height="865" data-Roundness="75">
+        
+        <br>
+
+        <textarea id="number1" placeholder="English" data-align="left" data-x="1020" data-y="1200" data-font="EnglishFont" rows="4" cols="30"></textarea>
+        <textarea id="number1" placeholder="Arabic" data-align="right" data-x="2800" data-y="1200" data-font="ArabicFont" rows="4" cols="30"></textarea>
+       
+        <input type="text" id="number13" placeholder="Code" data-align="center" data-x="2200" data-y="988" data-font="CodeFont" data-color="#000000">
+
+        <br>
+        
+    </div>
+
+    <script>
+        const baseImage = new Image();
+        baseImage.crossOrigin = "anonymous";
+        baseImage.src = 'https://sarvari1378.github.io/Files/Sadaf_template.jpg';
+        
+        let overlayImg = new Image();
+        let ringImg = new Image();
+        let circleImg = new Image();
+        
+        
+        document.getElementById('ringImageInput').addEventListener('change', event => loadImage(event, ringImg));
+        document.getElementById('circleImageInput').addEventListener('change', event => loadImage(event, circleImg));
+        
+        document.querySelectorAll('input[type="text"]').forEach(input => {
+            input.addEventListener('input', generateImage);
+        });
+        document.getElementById('downloadBtn').addEventListener('click', downloadImage);
+        
+        function loadImage(event, imgElement) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imgElement.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        baseImage.onload = generateImage;
+        overlayImg.onload = generateImage;
+        ringImg.onload = generateImage;
+        circleImg.onload = generateImage;
+        
+        function generateImage() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size and draw the base image
+            canvas.width = baseImage.width;
+            canvas.height = baseImage.height;
+            ctx.drawImage(baseImage, 0, 0);
+
+            // Draw additional images
+            drawImageWithMode(ctx, ringImg, document.getElementById('ringImageInput'));
+            drawCircleImage(ctx, circleImg, document.getElementById('circleImageInput'));
+
+            // Draw text from inputs and textareas
+            document.querySelectorAll('input[type="text"], textarea').forEach(input => {
+                const text = input.value;
+                const alignOptions = ['left', 'right', 'center'];
+                const align = alignOptions.includes(input.dataset.align) ? input.dataset.align : 'left';
+                const x = parseInt(input.dataset.x, 10) || 50;
+                const y = parseInt(input.dataset.y, 10) || 50;
+                const font = input.dataset.font || 'EnglishFont';
+                const Color = input.dataset.color || '#ffffff';
+                const fontSize = input.dataset.fontSize || '78';  // default to 48px
+
+                ctx.font = `${fontSize}px ${font}`;
+                ctx.fillStyle = Color;
+                ctx.textAlign = align;
+                ctx.direction = align === 'right' ? 'rtl' : 'ltr';
+
+                // Render multi-line text
+                const lines = text.split('\n');
+                lines.forEach((line, index) => {
+                    const lineHeight = parseInt(fontSize, 10) + 5; // 5px spacing between lines
+                    ctx.fillText(line, x, y + index * lineHeight);
+                });
+            });
+        }
+
+        // Attach real-time updates to inputs and textareas
+        document.querySelectorAll('input[type="text"], textarea').forEach(input => {
+            input.addEventListener('input', generateImage);
+        });
+        
+        function drawImageWithMode(ctx, imgElement, inputElement) {
+            if (imgElement.src) {
+                const x = parseInt(inputElement.dataset.x, 10) || 100;
+                const y = parseInt(inputElement.dataset.y, 10) || 100;
+                const width = parseInt(inputElement.dataset.width, 10) || 100;
+                const height = parseInt(inputElement.dataset.height, 10) || 100;
+                ctx.globalCompositeOperation = inputElement.dataset.mode || 'normal';
+                ctx.drawImage(imgElement, x, y, width, height);
+                ctx.globalCompositeOperation = 'source-over';
+            }
+        }
+        
+        function drawCircleImage(ctx, imgElement, inputElement) {
+            const scalePercent = 100;  // درصد تغییر اندازه تصویر
+            const rectWidth = 503.59;    // عرض مستطیل
+            const rectHeight = 149.86;   // طول مستطیل
+            const rectColor = "rgba(215, 166, 107, 1)";  // رنگ مستطیل (بدون شفافیت)
+
+            // موقعیت مستطیل (موقعیت دلخواه خود را اینجا وارد کنید)
+            const rectPosition = {
+                x: 1937,  // موقعیت X مستطیل
+                y: 888   // موقعیت Y مستطیل
+            };
+
+            if (imgElement.src) {
+                const x = parseInt(inputElement.dataset.x, 10) || 250;
+                const y = parseInt(inputElement.dataset.y, 10) || 250;
+                const width = parseInt(inputElement.dataset.width, 10) || 100;
+                const height = parseInt(inputElement.dataset.height, 10) || 100;
+                const Roundness = parseInt(inputElement.dataset.Roundness, 10) || 100;
+
+                // موقعیت و اندازه دایره ثابت می‌ماند
+                const centerX = x + width / 2;
+                const centerY = y + height / 2;
+                
+
+                // محاسبه اندازه جدید تصویر بر اساس درصد ورودی
+                const newImgWidth = imgElement.width * (scalePercent / 100);
+                const newImgHeight = imgElement.height * (scalePercent / 100);
+
+                // ماسک دایره‌ای برای نمایش تصویر
+                ctx.save();
+                ctx.beginPath();
+                
+                ctx.moveTo(x + Roundness, y); // شروع از گوشه بالا چپ
+                ctx.arcTo(x + width, y, x + width, y + height, Roundness); // گوشه بالای راست
+                ctx.arcTo(x + width, y + height, x, y + height, Roundness); // گوشه پایین راست
+                ctx.arcTo(x, y + height, x, y, Roundness); // گوشه پایین چپ
+                ctx.arcTo(x, y, x + width, y, Roundness); // گوشه بالا چپ
+
+
+
+                ctx.closePath();
+                ctx.clip(); // فقط داخل دایره نمایش داده می‌شود
+
+                // موقعیت تصویر به گونه‌ای تنظیم می‌شود که مرکز تصویر در مرکز دایره قرار گیرد
+                const imgX = centerX - newImgWidth / 2;
+                const imgY = centerY - newImgHeight / 2;
+
+                // رسم تصویر با اندازه جدید
+                ctx.drawImage(imgElement, imgX, imgY, newImgWidth, newImgHeight);
+
+                // موقعیت مستطیل بر اساس متغیر rectPosition تنظیم می‌شود
+                const rectX = rectPosition.x;
+                const rectY = rectPosition.y;
+
+                // رسم مستطیل با گوشه‌های گرد در موقعیت جدید
+                ctx.beginPath();
+                ctx.moveTo(rectX + 50, rectY); // شروع از گوشه بالا چپ
+                ctx.arcTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + rectHeight, 50); // گوشه بالای راست
+                ctx.arcTo(rectX + rectWidth, rectY + rectHeight, rectX, rectY + rectHeight, 50); // گوشه پایین راست
+                ctx.arcTo(rectX, rectY + rectHeight, rectX, rectY, 50); // گوشه پایین چپ
+                ctx.arcTo(rectX, rectY, rectX + rectWidth, rectY, 50); // گوشه بالا چپ
+
+                ctx.closePath();
+                
+               
+                
+                ctx.restore();
+
+                // تنظیم رنگ و پر کردن مستطیل
+                ctx.fillStyle = rectColor;  // رنگ مستطیل
+                ctx.fill();  // پر کردن مستطیل
+            }
+        }
+
+        function downloadImage() {
+            const canvas = document.getElementById('canvas');
+            
+            // Resize canvas to match 8.5 cm x 5.4 cm at 350 DPI
+            const targetWidth = Math.round((8.5 / 2.54) * 350); // ≈ 1171px
+            const targetHeight = Math.round((5.4 / 2.54) * 350); // ≈ 744px
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = targetWidth;
+            tempCanvas.height = targetHeight;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+
+            const imgData = tempCanvas.toDataURL('image/jpeg');
+
+            // Insert DPI metadata (350 DPI)
+            let exifObj = {
+                "0th": {
+                    [piexif.ImageIFD.XResolution]: [350, 1],
+                    [piexif.ImageIFD.YResolution]: [350, 1],
+                    [piexif.ImageIFD.ResolutionUnit]: 2
+                }
+            };
+            let exifBytes = piexif.dump(exifObj);
+            let newImageData = piexif.insert(exifBytes, imgData);
+
+            // Download the image
+            const codeInput = document.getElementById('number13').value.trim();
+            const fileName = codeInput ? codeInput + ".jpg" : "image_with_350dpi.jpg";
+
+            const link = document.createElement('a');
+            link.href = newImageData;
+            link.download = fileName;
+            link.click();
+        } 
+
+
+
+    </script>
+</body>
+</html>

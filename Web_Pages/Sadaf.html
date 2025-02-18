@@ -88,15 +88,15 @@
   </div>
   <div class="container">
     <h2>QR Code Image</h2>
-    <!-- This input will receive the URL automatically based on the code input -->
+    <!-- This input will be automatically filled based on the code input -->
     <input
       type="text"
       id="ringImageInput"
       placeholder="QR Code URL will appear automatically"
-      data-x="328"
-      data-y="1207"
-      data-width="400"
-      data-height="400"
+      data-x="280"
+      data-y="1165"
+      data-width="500"
+      data-height="500"
       data-mode="darken"
     />
 
@@ -135,8 +135,7 @@
       cols="30"
     ></textarea>
 
-    <!-- Code input: When you type a code here (e.g., 1105, Code:1105, or Code: 1105),
-         the script automatically sets the QR code URL -->
+    <!-- Code input: Accepts values like 1105, "Code:1105", or "Code: 1105" -->
     <input
       type="text"
       id="number13"
@@ -158,9 +157,11 @@
       baseImage.crossOrigin = "anonymous";
       baseImage.src = 'https://sarvari1378.github.io/Files/Sadaf_template.jpg';
 
-      // Image objects for the QR code and ring image overlays
+      // Image objects for the QR code and ring image overlays with crossOrigin set
       let ringImg = new Image();
+      ringImg.crossOrigin = "anonymous";
       let circleImg = new Image();
+      circleImg.crossOrigin = "anonymous";
 
       // Attach event listeners to the QR code URL input and file input
       document.getElementById("ringImageInput").addEventListener("change", function (event) {
@@ -172,7 +173,7 @@
 
       // When the code input changes, automatically update the QR code URL.
       document.getElementById("number13").addEventListener("input", function () {
-        // Remove any prefix like "code:" (case-insensitive) from the input
+        // Remove any prefix like "code:" (case-insensitive)
         let codeValue = this.value.trim();
         if (codeValue.toLowerCase().startsWith("code:")) {
           codeValue = codeValue.substring(5).trim();
@@ -181,27 +182,28 @@
         if (codeValue) {
           const codeNum = parseInt(codeValue, 10);
           if (!isNaN(codeNum)) {
-            // In this example, subtract 1000 from the code (e.g., 1105 becomes 105)
+            // Example: subtract 1000 (so 1105 becomes 105)
             const itemNumber = codeNum - 1000;
             const qrURL = "https://sadafjewellery.org/item_" + itemNumber;
             console.log("Setting QR code URL:", qrURL);
             const qrInput = document.getElementById("ringImageInput");
             qrInput.value = qrURL;
-            // Dispatch a change event so the loadImage() function is triggered
+            // Dispatch change event so loadImage() triggers
             const changeEvent = new Event("change");
             qrInput.dispatchEvent(changeEvent);
           }
         }
       });
 
-      // Attach event listeners for text inputs (excluding the QR code URL input) and textareas for redrawing the canvas
-      document.querySelectorAll("input[type='text']:not(#ringImageInput), textarea").forEach(function (input) {
-        input.addEventListener("input", generateImage);
+      // Attach event listeners for text inputs (excluding the QR code URL input) and textareas
+      document.querySelectorAll("input[type='text']:not(#ringImageInput), textarea")
+        .forEach(function (input) {
+          input.addEventListener("input", generateImage);
       });
 
       document.getElementById("downloadBtn").addEventListener("click", downloadImage);
 
-      // Function to load an image either from a file or a URL (to be converted into a QR code)
+      // Function to load an image either from a file or from a URL (converted into a QR code)
       function loadImage(event, imgElement) {
         const input = event.target;
         if (input.files && input.files[0]) {
@@ -215,13 +217,11 @@
           const url = input.value;
           const width = input.dataset.width || 400;
           const height = input.dataset.height || 400;
+          // Using the QuickChart QR API which returns proper CORS headers
           imgElement.src =
-            "https://api.qrserver.com/v1/create-qr-code/?size=" +
-            width +
-            "x" +
-            height +
-            "&data=" +
-            encodeURIComponent(url);
+            "https://quickchart.io/qr?text=" +
+            encodeURIComponent(url) +
+            "&size=" + width + "x" + height;
         }
       }
 
@@ -249,27 +249,29 @@
         drawCircleImage(ctx, circleImg, document.getElementById("circleImageInput"));
 
         // Draw text from all text inputs (excluding the QR code URL input) and textareas
-        document.querySelectorAll("input[type='text']:not(#ringImageInput), textarea").forEach(function (input) {
-          const text = input.value;
-          const alignOptions = ["left", "right", "center"];
-          const align = alignOptions.includes(input.dataset.align) ? input.dataset.align : "left";
-          const x = parseInt(input.dataset.x, 10) || 50;
-          const y = parseInt(input.dataset.y, 10) || 50;
-          const font = input.dataset.font || "EnglishFont";
-          const color = input.dataset.color || "#ffffff";
-          const fontSize = input.dataset.fontSize || "78";
+        document.querySelectorAll("input[type='text']:not(#ringImageInput), textarea")
+          .forEach(function (input) {
+            const text = input.value;
+            const alignOptions = ["left", "right", "center"];
+            const align = alignOptions.includes(input.dataset.align)
+              ? input.dataset.align
+              : "left";
+            const x = parseInt(input.dataset.x, 10) || 50;
+            const y = parseInt(input.dataset.y, 10) || 50;
+            const font = input.dataset.font || "EnglishFont";
+            const color = input.dataset.color || "#ffffff";
+            const fontSize = input.dataset.fontSize || "78";
 
-          ctx.font = fontSize + "px " + font;
-          ctx.fillStyle = color;
-          ctx.textAlign = align;
-          ctx.direction = align === "right" ? "rtl" : "ltr";
+            ctx.font = fontSize + "px " + font;
+            ctx.fillStyle = color;
+            ctx.textAlign = align;
+            ctx.direction = align === "right" ? "rtl" : "ltr";
 
-          // Render multi-line text
-          const lines = text.split("\n");
-          lines.forEach(function (line, index) {
-            const lineHeight = parseInt(fontSize, 10) + 5;
-            ctx.fillText(line, x, y + index * lineHeight);
-          });
+            const lines = text.split("\n");
+            lines.forEach(function (line, index) {
+              const lineHeight = parseInt(fontSize, 10) + 5;
+              ctx.fillText(line, x, y + index * lineHeight);
+            });
         });
       }
 
@@ -319,7 +321,6 @@
           const imgY = centerY - newImgHeight / 2;
           ctx.drawImage(imgElement, imgX, imgY, newImgWidth, newImgHeight);
 
-          // Draw rounded rectangle if needed
           const rectX = rectPosition.x;
           const rectY = rectPosition.y;
           ctx.beginPath();
@@ -346,6 +347,7 @@
         const ctx = tempCanvas.getContext("2d");
         ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
 
+        // This should now work since all images are loaded with proper CORS settings
         const imgData = tempCanvas.toDataURL("image/jpeg");
         let exifObj = {
           "0th": {

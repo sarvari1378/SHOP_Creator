@@ -27,47 +27,37 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
 
     - name: Get raw URL of selected image
       id: image_url
-      run: |
-        IMAGE_NAME="${{ github.event.inputs.image }}"
-        IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${IMAGE_NAME}"
-        echo "image_url=$IMAGE_RAW_URL" >> $GITHUB_ENV
+      run: echo "image_url=https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${{ github.event.inputs.image }}" >> $GITHUB_ENV
 
     - name: Format descriptions and add item to data.json
       run: |
-        ITEM_TITLE="${{ github.event.inputs.title }}"
-
         add_newline_before_words() {
           local input="$1"
-          local words_to_add_newline=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")  # Add words here that should trigger a newline before them
-
+          local words_to_add_newline=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")
           for word in "${words_to_add_newline[@]}"; do
             input=$(echo "$input" | sed "s/\b$word\b/\n$word/g")
           done
-
           echo "$input"
         }
-
+        
+        ITEM_TITLE="${{ github.event.inputs.title }}"
         ITEM_DESC_EN=$(add_newline_before_words "${{ github.event.inputs.english_description }}")
         ITEM_DESC_FA=$(add_newline_before_words "${{ github.event.inputs.persian_description }}")
-        ITEM_IMG="$image_url"
-
+        IMAGE_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${{ github.event.inputs.image }}"
+        
         DATA_FILE="Data.json"
-        json_content=$(cat $DATA_FILE)
-
-        new_item=$(
-          jq -n --arg title "$ITEM_TITLE" \
-                --arg englishDescription "$ITEM_DESC_EN" \
-                --arg persianDescription "$ITEM_DESC_FA" \
-                --arg image "$ITEM_IMG" \
-                '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}'
-        )
-
-        # Add the new item to the existing JSON file
-        new_json=$(echo "$json_content" | jq ".items += [$new_item]")
-        echo "$new_json" | jq '.' > $DATA_FILE
+        new_item=$(jq -n --arg title "$ITEM_TITLE" \
+                         --arg englishDescription "$ITEM_DESC_EN" \
+                         --arg persianDescription "$ITEM_DESC_FA" \
+                         --arg image "$IMAGE_URL" \
+                         '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}')
+        
+        jq ".items += [$new_item]" "$DATA_FILE" | tee "$DATA_FILE"
 
     - name: Commit changes
       run: |

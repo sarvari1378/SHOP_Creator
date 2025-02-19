@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Instagram-like Image Grid</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #fafafa;
+      scroll-behavior: smooth;
+    }
+    /* Grid container: no gap/padding, always at least 3 columns */
+    .grid-container {
+      display: grid;
+      grid-gap: 0;
+      padding: 0;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    /* Increase column count on larger screens */
+    @media (min-width: 600px) {
+      .grid-container {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    @media (min-width: 900px) {
+      .grid-container {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+    /* Each grid item is a square and will transition in/out */
+    .grid-item {
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      background: #eee;
+      aspect-ratio: 1 / 1;
+      /* Start hidden and shifted downward */
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    /* When in view, show the item */
+    .grid-item.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    /* Image fills its container */
+    .grid-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    /* Title overlay at the bottom */
+    .overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 5px;
+      font-size: 14px;
+      text-align: center;
+    }
+    /* Spinner container centers the spinner */
+    .spinner-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    /* Professional spinner style */
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    /* Sentinel element for triggering infinite scroll */
+    #sentinel {
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Grid container -->
+  <div class="grid-container" id="grid"></div>
+  <!-- Sentinel element for infinite scrolling -->
+  <div id="sentinel"></div>
+
+  <script>
+    // URL of your JSON file
+    const jsonUrl = "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/refs/heads/main/Data.json";
+    let items = [];
+    let currentIndex = 0;
+    const batchSize = 25;  // Number of items to load per batch
+    const grid = document.getElementById('grid');
+    const sentinel = document.getElementById('sentinel');
+
+    // Intersection Observer for animating grid items in and out of view
+    const itemObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+        } else {
+          entry.target.classList.remove('in-view');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    // Function to create and append a grid item
+    function createGridItem(item, index) {
+      // Create grid item container
+      const itemDiv = document.createElement('div');
+      itemDiv.classList.add('grid-item');
+
+      // When clicked, redirect to the desired URL
+      itemDiv.addEventListener('click', () => {
+        window.location.href = `https://sadafjewellery.org/item_${index}`;
+      });
+
+      // Spinner container
+      const spinnerContainer = document.createElement('div');
+      spinnerContainer.classList.add('spinner-container');
+      const spinner = document.createElement('div');
+      spinner.classList.add('spinner');
+      spinnerContainer.appendChild(spinner);
+      itemDiv.appendChild(spinnerContainer);
+
+      // Image element
+      const img = document.createElement('img');
+      img.src = item.image;
+      img.alt = item.title;
+      img.onload = function() {
+        spinnerContainer.remove();
+      };
+      itemDiv.appendChild(img);
+
+      // Title overlay
+      const overlay = document.createElement('div');
+      overlay.classList.add('overlay');
+      overlay.textContent = item.title;
+      itemDiv.appendChild(overlay);
+
+      // Append to grid
+      grid.appendChild(itemDiv);
+
+      // Start observing this grid item for in/out of view
+      itemObserver.observe(itemDiv);
+    }
+
+    // Function to load the next batch of items
+    function loadNextBatch() {
+      const endIndex = Math.min(currentIndex + batchSize, items.length);
+      for (let i = currentIndex; i < endIndex; i++) {
+        createGridItem(items[i], i);
+      }
+      currentIndex = endIndex;
+      // Disconnect sentinel observer if no more items to load
+      if (currentIndex >= items.length) {
+        sentinelObserver.disconnect();
+      }
+    }
+
+    // Intersection Observer to trigger loading when sentinel appears in the viewport
+    const sentinelObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          loadNextBatch();
+        }
+      });
+    });
+
+    // Fetch JSON data and initialize the grid
+    fetch(jsonUrl)
+      .then(response => {
+        if (!response.ok) throw new Error("Network response was not ok");
+        return response.json();
+      })
+      .then(data => {
+        items = data.items;
+        loadNextBatch(); // Load the initial batch
+        sentinelObserver.observe(sentinel); // Start observing the sentinel
+      })
+      .catch(error => console.error('Error loading JSON:', error));
+  </script>
+</body>
+</html>

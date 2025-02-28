@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image with Customizable Text Overlay</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            max-height: 90%;
+            overflow: hidden;
+            position: relative;
+        }
+        input[type="file"], input[type="number"], input[type="color"], input[type="range"], select {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 300px;
+        }
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            max-width: 100%;
+            max-height: 100%;
+            cursor: grab;
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.0/piexif.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <h2>Upload Image and Add Custom Number</h2>
+        <input type="file" id="imageInput" accept="image/*" />
+        <input type="number" id="numberInput" placeholder="Enter a number" />
+        <input type="number" id="xPosition" placeholder="X Position" />
+        <input type="number" id="yPosition" placeholder="Y Position" />
+        <input type="color" id="colorPicker" value="#ffffff" />
+        <input type="number" id="fontSizeInput" placeholder="Font Size" value="48" />
+        
+        <!-- Added dropdown for text alignment -->
+        <label for="alignmentSelect">Text Alignment:</label>
+        <select id="alignmentSelect">
+            <option value="center">Center</option>
+            <option value="left">Left</option>
+            <option value="right">Right</option>
+        </select>
+        
+        <br>
+        <input type="number" id="rangeStart" placeholder="Start Number" />
+        <input type="number" id="rangeEnd" placeholder="End Number" />
+        <button id="rangeDownloadBtn">Download Range Images</button>
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+        <button id="downloadBtn">Download Image</button>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const numberInput = document.getElementById('numberInput');
+        const xPosition = document.getElementById('xPosition');
+        const yPosition = document.getElementById('yPosition');
+        const colorPicker = document.getElementById('colorPicker');
+        const fontSizeInput = document.getElementById('fontSizeInput');
+        const alignmentSelect = document.getElementById('alignmentSelect');
+        const canvas = document.getElementById('canvas');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const rangeDownloadBtn = document.getElementById('rangeDownloadBtn');
+        const ctx = canvas.getContext('2d');
+        let img = new Image();
+        let imageDPI = 300;  // Assuming the image is 300 DPI
+
+        // Function to convert physical size (cm) to pixels based on DPI
+        function convertCmToPixels(cm, dpi) {
+            const inches = cm / 2.54;  // Convert cm to inches
+            return inches * dpi;  // Convert inches to pixels
+        }
+
+        imageInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    img.onload = () => {
+                        // Calculate the image's width and height in pixels based on DPI
+                        const widthInPixels = convertCmToPixels(5, imageDPI);  // 5 cm width
+                        const heightInPixels = convertCmToPixels(2, imageDPI);  // 2 cm height
+
+                        // Set the canvas size based on the image's pixel dimensions
+                        canvas.width = widthInPixels;
+                        canvas.height = heightInPixels;
+
+                        // Draw the image on the canvas at the correct resolution
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        drawTextOnCanvas();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        numberInput.addEventListener('input', () => {
+            drawTextOnCanvas();
+        });
+
+        xPosition.addEventListener('input', () => {
+            drawTextOnCanvas();
+        });
+
+        yPosition.addEventListener('input', () => {
+            drawTextOnCanvas();
+        });
+
+        colorPicker.addEventListener('input', () => {
+            drawTextOnCanvas();
+        });
+
+        fontSizeInput.addEventListener('input', () => {
+            drawTextOnCanvas();
+        });
+
+        alignmentSelect.addEventListener('change', () => {
+            drawTextOnCanvas();
+        });
+
+        function drawTextOnCanvas() {
+            if (!img.src) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas before redrawing
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const number = numberInput.value;
+            const xPos = xPosition.value ? parseInt(xPosition.value) : canvas.width / 2;
+            const yPos = yPosition.value ? parseInt(yPosition.value) : canvas.height / 2;
+            const color = colorPicker.value;
+            const fontSize = fontSizeInput.value ? parseInt(fontSizeInput.value) : 48; // Default font size is 48px
+            const alignment = alignmentSelect.value;
+
+            if (number) {
+                ctx.font = `${fontSize}px Arial`;
+                ctx.fillStyle = color;
+                ctx.textBaseline = 'middle';
+
+                // Set the alignment based on user's choice
+                if (alignment === 'center') {
+                    ctx.textAlign = 'center';
+                } else if (alignment === 'left') {
+                    ctx.textAlign = 'left';
+                } else if (alignment === 'right') {
+                    ctx.textAlign = 'right';
+                }
+
+                ctx.fillText(number, xPos, yPos);
+            }
+        }
+
+        // Single image download
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            const dpiScaledCanvas = document.createElement('canvas');
+            const dpiScaledCtx = dpiScaledCanvas.getContext('2d');
+
+            // Scale the canvas based on the DPI for download
+            dpiScaledCanvas.width = 591;
+            dpiScaledCanvas.height = 236;
+
+            // Draw the image with the same resolution (DPI)
+            dpiScaledCtx.drawImage(canvas, 0, 0, dpiScaledCanvas.width, dpiScaledCanvas.height);
+
+            link.href = dpiScaledCanvas.toDataURL('image/jpg');
+            link.download = 'image-with-number.jpg';
+            link.click();
+        });
+
+        rangeDownloadBtn.addEventListener('click', async () => {
+            const startNumber = parseInt(document.getElementById('rangeStart').value);
+            const endNumber = parseInt(document.getElementById('rangeEnd').value);
+
+            if (isNaN(startNumber) || isNaN(endNumber)) {
+                alert('Please enter a valid range of numbers.');
+                return;
+            }
+
+            const zip = new JSZip(); // Initialize ZIP
+            let currentNumber = startNumber;
+
+            for (let i = currentNumber; i <= endNumber; i++) {
+                numberInput.value = i;
+                drawTextOnCanvas();
+
+                const dpiScaledCanvas = document.createElement('canvas');
+                const dpiScaledCtx = dpiScaledCanvas.getContext('2d');
+
+                dpiScaledCanvas.width = 591;
+                dpiScaledCanvas.height = 236;
+                dpiScaledCtx.drawImage(canvas, 0, 0, dpiScaledCanvas.width, dpiScaledCanvas.height);
+
+                const imageData = dpiScaledCanvas.toDataURL('image/jpeg');
+
+                let exifObj = {
+                    "0th": {
+                        [piexif.ImageIFD.XResolution]: [300, 1],
+                        [piexif.ImageIFD.YResolution]: [300, 1],
+                        [piexif.ImageIFD.ResolutionUnit]: 2
+                    }
+                };
+
+                const exifBytes = piexif.dump(exifObj);
+                const imageWithExif = piexif.insert(exifBytes, imageData);
+
+                const response = await fetch(imageWithExif);
+                const blob = await response.blob();
+
+                zip.file(`${i}-image.jpg`, blob); // Add image to ZIP
+            }
+
+            // Generate ZIP and trigger download
+            zip.generateAsync({ type: "blob" }).then((content) => {
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(content);
+                link.download = "images.rar"; // Rename ZIP to RAR
+                link.click();
+            });
+        });
+
+
+
+
+    </script>
+</body>
+</html>

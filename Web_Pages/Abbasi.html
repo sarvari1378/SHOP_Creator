@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Optional: piexifjs is still included if you need it for other purposes -->
+  <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.4/piexif.min.js"></script>
+  <title>Image Number Overlay</title>
+  <style>
+    @font-face {
+      font-family: 'EnglishFont';
+      src: url('https://sarvari1378.github.io/Files/Fonts/MyriadProRegular.ttf');
+    }
+
+    @font-face {
+      font-family: 'ArabicFont';
+      src: url('https://github.com/sarvari1378/Files/raw/refs/heads/main/Fonts/MyriadArabicRegular.ttf');
+    }
+
+    @font-face {
+      font-family: 'CodeFont';
+      src: url('https://github.com/sarvari1378/Files/raw/refs/heads/main/Fonts/BookAntiqua.ttf');
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .preview-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 20px;
+      width: 70%;
+      height: calc(50vh - 20px);
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .container {
+      margin-top: 700px;
+      text-align: center;
+    }
+    input, button {
+      margin: 10px 0;
+    }
+    input {
+      margin: 10px 0;
+      padding: 10px;
+      width: 90%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    canvas {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      max-width: 100%;
+    }
+    #buttonContainer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    #downloadBtn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    #downloadBtn:hover {
+      background-color: white;
+      color: #4CAF50;
+      border: 2px solid #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-container">
+    <canvas id="canvas"></canvas>
+    <button id="downloadBtn">Download Image</button>
+  </div>
+  <div class="container">
+    <h2>Qr Code Image</h2>
+    <input type="file" id="ringImageInput" accept="image/*" data-x="1870" data-y="1000" data-width="450" data-height="450" data-mode="darken">
+    
+    <h2>Ring Image</h2>
+    <input type="file" id="circleImageInput" accept="image/*" data-x="250" data-y="163" data-width="710" data-height="710">
+    
+    <h2>Scale of Image</h2>
+    <input type="range" id="slider" min="0" max="3" step="0.01" value="1">
+
+    <h2>X posiotion</h2>
+    <input type="range" id="sliderx" min="-300" max="300" step="0.01" value="0.5">
+
+    <h2>Y posiotion</h2>
+    <input type="range" id="slidery" min="-300" max="300" step="0.01" value="0.5">
+    
+    <br>
+    <input type="text" id="number1" placeholder="Pedal Name" data-align="left" data-x="633" data-y="1037" data-font="EnglishFont" data-x2="633" data-y2="1065">
+    <input type="text" id="number2" placeholder="Build Type" data-align="left" data-x="590" data-y="1115" data-font="EnglishFont" data-x2="590" data-y2="1145">
+
+    <input type="text" id="number3" placeholder="Percentage of silver" data-align="left" data-x="815" data-y="1190" data-font="EnglishFont" data-x2="815" data-y2="1220">
+    <input type="text" id="number4" placeholder="Type of stone" data-align="left" data-x="665" data-y="1265" data-font="EnglishFont" data-x2="665" data-y2="1295">
+
+    <input type="text" id="number5" placeholder="Number of Diamond" data-align="left" data-x="820" data-y="1340" data-font="EnglishFont" data-x2="548" data-y2="565">
+    <input type="text" id="number6" placeholder="Weight" data-align="left" data-x="520" data-y="1415" data-font="EnglishFont" data-x2="525" data-y2="1368">
+    <input type="text" id="number7" placeholder="Code" data-align="center" data-x="1030" data-y="940" data-font="CodeFont" data-font-size="110" data-x2="1030" data-y2="940" data-color="#231f20">
+
+    <input type="text" id="number8" placeholder="اسم دواسه" data-align="right" data-x="1459" data-y="1050" data-font="ArabicFont" data-x2="1455" data-y2="1075">
+    <input type="text" id="number9" placeholder="نوع صیاغه" data-align="right" data-x="1459" data-y="1125" data-font="ArabicFont" data-x2="1454" data-y2="1150">
+    <input type="text" id="number10" placeholder="عیار الفضه" data-align="right" data-x="1459" data-y="1200" data-font="ArabicFont" data-x2="1460" data-y2="1225">
+    <input type="text" id="number11" placeholder="خاتم التوقیع" data-align="right" data-x="1430" data-y="1275" data-font="ArabicFont" data-x2="1425" data-y2="1305">
+    <input type="text" id="number12" placeholder="عدد الماس" data-align="right" data-x="1469" data-y="1355" data-font="ArabicFont" data-x2="1600" data-y2="1305">
+    <input type="text" id="number13" placeholder="الوزن" data-align="right" data-x="1560" data-y="1430" data-font="ArabicFont" data-x2="1560" data-y2="1380">
+    <br>
+  </div>
+
+  <script>
+    const baseImage = new Image();
+    baseImage.crossOrigin = "anonymous";
+    baseImage.src = 'https://sarvari1378.github.io/Files/Image_templates/abbasi_Without_Diamonds.png';
+    
+    let overlayImg = new Image();
+    let ringImg = new Image();
+    let circleImg = new Image();
+    
+    document.getElementById('ringImageInput').addEventListener('change', event => loadImage(event, ringImg));
+    document.getElementById('circleImageInput').addEventListener('change', event => loadImage(event, circleImg));
+    document.getElementById('slider').addEventListener('input', generateImage);
+    document.getElementById('sliderx').addEventListener('input', generateImage);
+    document.getElementById('slidery').addEventListener('input', generateImage);
+    document.getElementById('number5').addEventListener('input', generateImage);
+
+    document.querySelectorAll('input[type="text"]').forEach(input => {
+      input.addEventListener('input', generateImage);
+    });
+    document.getElementById('downloadBtn').addEventListener('click', downloadImage);
+    
+    function loadImage(event, imgElement) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        imgElement.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    baseImage.onload = generateImage;
+    overlayImg.onload = generateImage;
+    ringImg.onload = generateImage;
+    circleImg.onload = generateImage;
+    
+    function generateImage() {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = baseImage.width;
+      canvas.height = baseImage.height;
+      ctx.drawImage(baseImage, 0, 0);
+      const numberOfDiamonds = document.getElementById('number5').value.trim();
+      
+      if (numberOfDiamonds === '') {
+        // If empty, change the base image URL
+        baseImage.src = 'https://sarvari1378.github.io/Files/Image_templates/abbasi_Without_Diamonds.png';
+      } else {
+        // If not empty, use the original base image
+        baseImage.src = 'https://sarvari1378.github.io/Files/Image_templates/abbasi_With_Diamonds.png';
+      }
+
+      drawImageWithMode(ctx, ringImg, document.getElementById('ringImageInput'));
+      drawCircleImage(ctx, circleImg, document.getElementById('circleImageInput'));
+      
+      document.querySelectorAll('input[type="text"]').forEach(input => {
+        const text = input.value.trim();
+        if (text === "") return; // Prevent empty text rendering
+        
+        const alignOptions = ['left', 'right', 'center'];
+        const align = alignOptions.includes(input.dataset.align) ? input.dataset.align : 'left';
+        
+        let x = parseInt(input.dataset.x, 10) || 50;
+        let y = parseInt(input.dataset.y, 10) || 50;
+        
+        // Check if input with id 'number5' is empty
+        const number5Input = document.getElementById('number5');
+        if (number5Input && number5Input.value.trim() === "") {
+          x = parseInt(input.dataset.x2, 10) || x;
+          y = parseInt(input.dataset.y2, 10) || y;
+        }
+        
+        const font = input.dataset.font || 'EnglishFont';
+        const fontSize = input.dataset.fontSize || '50';
+
+        ctx.font = fontSize + "px " + font;
+        ctx.fillStyle =  input.dataset.color || "#ffffff";
+        ctx.textAlign = align;
+        ctx.direction = align === 'right' ? 'rtl' : 'ltr';
+
+        ctx.fillText(text, x, y);
+      });
+    }
+    
+    function drawImageWithMode(ctx, imgElement, inputElement) {
+      if (imgElement.src) {
+        const x = parseInt(inputElement.dataset.x, 10) || 100;
+        const y = parseInt(inputElement.dataset.y, 10) || 100;
+        const width = parseInt(inputElement.dataset.width, 10) || 100;
+        const height = parseInt(inputElement.dataset.height, 10) || 100;
+        ctx.globalCompositeOperation = inputElement.dataset.mode || 'normal';
+        ctx.drawImage(imgElement, x, y, width, height);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    }
+    
+    function drawCircleImage(ctx, imgElement, inputElement) {
+      const slider = document.getElementById('slider');
+      const sliderValue = parseFloat(slider.value);
+      const scalePercent = sliderValue * 100;
+      const rectWidth = 460;
+      const rectHeight = 130;
+      const rectColor = "rgba(214, 167, 106, 1)";
+      const rectPosition = { x: 800, y: 845 };
+      const roundness = 64;
+
+      if (imgElement.src) {
+        const x = parseInt(inputElement.dataset.x, 10) || 250;
+        const y = parseInt(inputElement.dataset.y, 10) || 250;
+        const size = parseInt(inputElement.dataset.width, 10) || 100;
+
+        const centerX = x + size / 2;
+        const centerY = y + size / 2;
+        const radius = size / 2;
+
+        const newImgWidth = imgElement.width * (scalePercent / 100);
+        const newImgHeight = imgElement.height * (scalePercent / 100);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        const sliderx = document.getElementById('sliderx');
+        const sliderxValue = parseFloat(sliderx.value);
+        const slidery = document.getElementById('slidery');
+        const slideryValue = parseFloat(slidery.value);
+
+        const imgX = centerX - newImgWidth / 2 + sliderxValue;
+        const imgY = centerY - newImgHeight / 2 + slideryValue;
+
+        ctx.drawImage(imgElement, imgX, imgY, newImgWidth, newImgHeight);
+
+        const rectX = rectPosition.x;
+        const rectY = rectPosition.y;
+
+        ctx.beginPath();
+        ctx.moveTo(rectX + roundness, rectY);
+        ctx.arcTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + rectHeight, roundness);
+        ctx.arcTo(rectX + rectWidth, rectY + rectHeight, rectX, rectY + rectHeight, roundness);
+        ctx.arcTo(rectX, rectY + rectHeight, rectX, rectY, roundness);
+        ctx.arcTo(rectX, rectY, rectX + rectWidth, rectY, roundness);
+        ctx.closePath();
+        ctx.restore();
+        ctx.fillStyle = rectColor;
+        ctx.fill();
+      }
+    }
+
+    function downloadImage() {
+      const canvas = document.getElementById('canvas');
+      // Convert canvas to PNG data URL
+      const pngDataUrl = canvas.toDataURL('image/png');
+      
+      // Convert base64 data to binary
+      let binary = atob(pngDataUrl.split(',')[1]);
+      let array = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        array[i] = binary.charCodeAt(i);
+      }
+
+      // Calculate pixels per meter for 300 DPI (~300/0.0254)
+      const dpi = 300;
+      const pixelsPerMeter = Math.round(dpi / 0.0254);
+
+      // Create the pHYs chunk data (9 bytes)
+      const pHYsData = new Uint8Array(9);
+      pHYsData[0] = (pixelsPerMeter >>> 24) & 0xFF;
+      pHYsData[1] = (pixelsPerMeter >>> 16) & 0xFF;
+      pHYsData[2] = (pixelsPerMeter >>> 8) & 0xFF;
+      pHYsData[3] = (pixelsPerMeter) & 0xFF;
+      pHYsData[4] = (pixelsPerMeter >>> 24) & 0xFF;
+      pHYsData[5] = (pixelsPerMeter >>> 16) & 0xFF;
+      pHYsData[6] = (pixelsPerMeter >>> 8) & 0xFF;
+      pHYsData[7] = (pixelsPerMeter) & 0xFF;
+      pHYsData[8] = 1; // unit: meter
+
+      const chunkType = new Uint8Array([0x70, 0x48, 0x59, 0x73]); // "pHYs"
+      const lengthBytes = new Uint8Array([0, 0, 0, 9]); // 9 bytes data
+
+      // Compute CRC over chunk type + data
+      const crcData = new Uint8Array(chunkType.length + pHYsData.length);
+      crcData.set(chunkType, 0);
+      crcData.set(pHYsData, chunkType.length);
+      const crc = crc32(crcData);
+      const crcBytes = new Uint8Array([
+        (crc >>> 24) & 0xFF,
+        (crc >>> 16) & 0xFF,
+        (crc >>> 8) & 0xFF,
+        (crc) & 0xFF
+      ]);
+
+      // Assemble the complete pHYs chunk
+      const pHYsChunk = new Uint8Array(4 + 4 + 9 + 4);
+      pHYsChunk.set(lengthBytes, 0);
+      pHYsChunk.set(chunkType, 4);
+      pHYsChunk.set(pHYsData, 8);
+      pHYsChunk.set(crcBytes, 17);
+
+      // Insert the pHYs chunk after the IHDR chunk (PNG signature is 8 bytes and IHDR is 25 bytes)
+      const signatureLength = 8;
+      const ihdrLength = 25;
+      const insertPos = signatureLength + ihdrLength;
+
+      const newLength = array.length + pHYsChunk.length;
+      let newPng = new Uint8Array(newLength);
+      newPng.set(array.slice(0, insertPos), 0);
+      newPng.set(pHYsChunk, insertPos);
+      newPng.set(array.slice(insertPos), insertPos + pHYsChunk.length);
+
+      // Convert the modified PNG back to a base64 data URL
+      const newBase64 = uint8ToBase64(newPng);
+      const newDataUrl = "data:image/png;base64," + newBase64;
+
+      const codeInput = document.getElementById('number7').value.trim();
+      const fileName = codeInput ? codeInput + ".png" : "image_with_300dpi.png";
+
+      const link = document.createElement('a');
+      link.href = newDataUrl;
+      link.download = fileName;
+      link.click();
+    }
+
+    // Helper function: Convert Uint8Array to base64 string
+    function uint8ToBase64(u8Arr) {
+      const CHUNK_SIZE = 0x8000;
+      let index = 0;
+      let result = '';
+      while (index < u8Arr.length) {
+        let slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, u8Arr.length));
+        result += String.fromCharCode.apply(null, slice);
+        index += CHUNK_SIZE;
+      }
+      return btoa(result);
+    }
+
+    // Helper function: CRC32 calculation for a Uint8Array
+    function crc32(buf) {
+      let table = crc32.table;
+      if (!table) {
+        table = crc32.table = [];
+        for (let i = 0; i < 256; i++) {
+          let c = i;
+          for (let k = 0; k < 8; k++) {
+            c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+          }
+          table[i] = c;
+        }
+      }
+      let crc = 0 ^ (-1);
+      for (let i = 0; i < buf.length; i++) {
+        crc = (crc >>> 8) ^ table[(crc ^ buf[i]) & 0xFF];
+      }
+      return (crc ^ (-1)) >>> 0;
+    }
+  </script>
+</body>
+</html>

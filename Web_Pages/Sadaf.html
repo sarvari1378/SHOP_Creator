@@ -458,7 +458,7 @@
       const xhr = new XMLHttpRequest();
       const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/actions/workflows/ADD_Items.yml/dispatches';
       xhr.open('POST', url, true);
-      xhr.setRequestHeader('Authorization', 'Bearer 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');
+      xhr.setRequestHeader('Authorization', 'Bearer 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');
       xhr.setRequestHeader('Content-Type', 'application/json');
 
       xhr.onload = function () {
@@ -469,7 +469,7 @@
             const putXhr = new XMLHttpRequest();
             const putUrl = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/contents/Images/' + extractedCode + '.jpg';
             putXhr.open('PUT', putUrl, true);
-            putXhr.setRequestHeader('Authorization', 'Bearer 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');
+            putXhr.setRequestHeader('Authorization', 'Bearer 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');
             putXhr.setRequestHeader('Content-Type', 'application/json');
 
             const payload = {

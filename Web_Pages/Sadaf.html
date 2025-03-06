@@ -79,12 +79,45 @@
       color: #4CAF50;
       border: 2px solid #4CAF50;
     }
+    /* Loading overlay styles */
+    #loadingOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #3498db;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 2s linear infinite;
+      margin-bottom: 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
+  <!-- Loading overlay element -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <p style="color:#fff; font-size:20px;">Processing...</p>
+  </div>
+
   <div class="preview-container">
     <canvas id="canvas"></canvas>
-    <button id="downloadBtn">Download Image</button>
+    <button id="downloadBtn" onclick="submitForm(event)">Download Image</button>
   </div>
   <div class="container">
     <h2>QR Code Image</h2>
@@ -112,6 +145,14 @@
       data-Roundness="75"
     />
 
+    <h2>Scale of Image</h2>
+    <input type="range" id="slider" min="0" max="5" step="0.01" value="0.5">
+
+    <h2>X posiotion</h2>
+    <input type="range" id="sliderx" min="-700" max="700" step="0.01" value="0.5">
+
+    <h2>Y posiotion</h2>
+    <input type="range" id="slidery" min="-700" max="700" step="0.01" value="0.5">
     <br />
 
     <textarea
@@ -125,7 +166,7 @@
       cols="30"
     ></textarea>
     <textarea
-      id="number1"
+      id="number2"
       placeholder="Arabic"
       data-align="right"
       data-x="2800"
@@ -171,6 +212,12 @@
         loadImage(event, circleImg);
       });
 
+
+      document.getElementById('slider').addEventListener('input', generateImage);
+      document.getElementById('sliderx').addEventListener('input', generateImage);
+      document.getElementById('slidery').addEventListener('input', generateImage);
+      
+      
       // When the code input changes, automatically update the QR code URL.
       document.getElementById("number13").addEventListener("input", function () {
         // Remove any prefix like "code:" (case-insensitive)
@@ -201,8 +248,6 @@
           input.addEventListener("input", generateImage);
       });
 
-      document.getElementById("downloadBtn").addEventListener("click", downloadImage);
-
       // Function to load an image either from a file or from a URL (converted into a QR code)
       function loadImage(event, imgElement) {
         const input = event.target;
@@ -211,6 +256,10 @@
           const reader = new FileReader();
           reader.onload = function (e) {
             imgElement.src = e.target.result;
+            // If the file is from the Ring Image input, save the data URL globally
+            if (input.id === "circleImageInput") {
+              window.uploadedRingImage = e.target.result;
+            }
           };
           reader.readAsDataURL(file);
         } else if (input.value) {
@@ -290,7 +339,9 @@
 
       // Function to draw the circle (ring) image with a clip and a rounded rectangle
       function drawCircleImage(ctx, imgElement, inputElement) {
-        const scalePercent = 100;
+        const slider = document.getElementById('slider');
+        const sliderValue = parseFloat(slider.value);
+        const scalePercent = sliderValue * 100;
         const rectWidth = 503.59;
         const rectHeight = 149.86;
         const rectColor = "rgba(215, 166, 107, 1)";
@@ -317,8 +368,13 @@
           ctx.closePath();
           ctx.clip();
 
-          const imgX = centerX - newImgWidth / 2;
-          const imgY = centerY - newImgHeight / 2;
+            const sliderx = document.getElementById('sliderx');
+            const sliderxValue = parseFloat(sliderx.value);
+            const slidery = document.getElementById('slidery');
+            const slideryValue = parseFloat(slidery.value);
+
+          const imgX = centerX - newImgWidth / 2 + sliderxValue;
+          const imgY = centerY - newImgHeight / 2 + slideryValue;
           ctx.drawImage(imgElement, imgX, imgY, newImgWidth, newImgHeight);
 
           const rectX = rectPosition.x;
@@ -347,7 +403,7 @@
         const ctx = tempCanvas.getContext("2d");
         ctx.drawImage(canvas, 0, 0, targetWidth, targetHeight);
 
-        // This should now work since all images are loaded with proper CORS settings
+        // Convert canvas to JPEG with DPI metadata
         const imgData = tempCanvas.toDataURL("image/jpeg");
         let exifObj = {
           "0th": {
@@ -365,7 +421,103 @@
         link.download = fileName;
         link.click();
       }
+      // Make downloadImage available globally
+      window.downloadImage = downloadImage;
     });
+  </script>
+  <script>
+    function extractCode(input) {
+      const match = input.match(/(\d+)/);
+      return match ? match[1] : '';
+    }
+
+    function submitForm(event) {
+      event.preventDefault();
+
+      // Show the loading overlay
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      loadingOverlay.style.display = "flex";
+
+      const codeInput = document.getElementById('number13').value;
+      const extractedCode = extractCode(codeInput);
+
+      if (!extractedCode) {
+        alert('Invalid Code format. Please provide a valid code.');
+        loadingOverlay.style.display = "none";
+        return;
+      }
+
+      const formData = {
+        title: extractedCode,
+        english_description: document.getElementById('number1').value,
+        persian_description: document.getElementById('number2').value,
+        image: `${extractedCode}.jpg`
+      };
+
+      // Trigger the GitHub Actions workflow (asynchronous request)
+      const xhr = new XMLHttpRequest();
+      const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/actions/workflows/ADD_Items.yml/dispatches';
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('Authorization', 'Bearer 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');
+      xhr.setRequestHeader('Content-Type', 'application/json');
+
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          // Workflow triggered successfully
+          if (window.uploadedRingImage) {
+            const base64Content = window.uploadedRingImage.split(',')[1];
+            const putXhr = new XMLHttpRequest();
+            const putUrl = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/contents/Images/' + extractedCode + '.jpg';
+            putXhr.open('PUT', putUrl, true);
+            putXhr.setRequestHeader('Authorization', 'Bearer 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');
+            putXhr.setRequestHeader('Content-Type', 'application/json');
+
+            const payload = {
+              message: 'Upload ring image for code ' + extractedCode,
+              content: base64Content,
+              branch: 'main'
+            };
+
+            putXhr.onload = function () {
+              loadingOverlay.style.display = "none";
+              if (putXhr.status >= 200 && putXhr.status < 300) {
+                alert('Workflow triggered and ring image uploaded successfully');
+              } else {
+                alert('Workflow triggered, but error uploading ring image: ' + putXhr.responseText);
+              }
+              // After processing, download the image
+              downloadImage();
+            };
+
+            putXhr.onerror = function () {
+              loadingOverlay.style.display = "none";
+              alert('An error occurred during the image upload request.');
+              downloadImage();
+            };
+
+            putXhr.send(JSON.stringify(payload));
+          } else {
+            loadingOverlay.style.display = "none";
+            alert('Workflow triggered successfully');
+            downloadImage();
+          }
+        } else {
+          loadingOverlay.style.display = "none";
+          const result = JSON.parse(xhr.responseText);
+          alert(result.message ? result.message : 'An error occurred');
+        }
+      };
+
+      xhr.onerror = function () {
+        loadingOverlay.style.display = "none";
+        alert('An error occurred during the workflow request.');
+      };
+
+      xhr.send(JSON.stringify({
+        ref: 'main',
+        inputs: formData
+      }));
+    }
   </script>
 </body>
 </html>

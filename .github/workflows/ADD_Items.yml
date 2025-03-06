@@ -25,54 +25,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch full history to ensure we can pull remote changes
 
-    - name: Get raw URL of selected image
-      id: image_url
-      run: |
-        IMAGE_NAME="${{ github.event.inputs.image }}"
-        IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${IMAGE_NAME}"
-        echo "image_url=$IMAGE_RAW_URL" >> $GITHUB_ENV
+      - name: Get raw URL of selected image
+        id: image_url
+        run: |
+          IMAGE_NAME="${{ github.event.inputs.image }}"
+          IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${IMAGE_NAME}"
+          echo "image_url=$IMAGE_RAW_URL" >> $GITHUB_ENV
 
-    - name: Format descriptions and add item to data.json
-      run: |
-        ITEM_TITLE="${{ github.event.inputs.title }}"
+      - name: Format descriptions and add item to data.json
+        run: |
+          ITEM_TITLE="${{ github.event.inputs.title }}"
 
-        add_newline_before_words() {
-          local input="$1"
-          local words_to_add_newline=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")  # Add words here that should trigger a newline before them
+          add_newline_before_words() {
+            local input="$1"
+            local words_to_add_newline=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")  # Add words here that should trigger a newline before them
 
-          for word in "${words_to_add_newline[@]}"; do
-            input=$(echo "$input" | sed "s/\b$word\b/\n$word/g")
-          done
+            for word in "${words_to_add_newline[@]}"; do
+              input=$(echo "$input" | sed "s/\b$word\b/\n$word/g")
+            done
 
-          echo "$input"
-        }
+            echo "$input"
+          }
 
-        ITEM_DESC_EN=$(add_newline_before_words "${{ github.event.inputs.english_description }}")
-        ITEM_DESC_FA=$(add_newline_before_words "${{ github.event.inputs.persian_description }}")
-        ITEM_IMG="$image_url"
+          ITEM_DESC_EN=$(add_newline_before_words "${{ github.event.inputs.english_description }}")
+          ITEM_DESC_FA=$(add_newline_before_words "${{ github.event.inputs.persian_description }}")
+          ITEM_IMG="$image_url"
 
-        DATA_FILE="Data.json"
-        json_content=$(cat $DATA_FILE)
+          DATA_FILE="Data.json"
+          json_content=$(cat $DATA_FILE)
 
-        new_item=$(
-          jq -n --arg title "$ITEM_TITLE" \
-                --arg englishDescription "$ITEM_DESC_EN" \
-                --arg persianDescription "$ITEM_DESC_FA" \
-                --arg image "$ITEM_IMG" \
-                '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}'
-        )
+          new_item=$(
+            jq -n --arg title "$ITEM_TITLE" \
+                  --arg englishDescription "$ITEM_DESC_EN" \
+                  --arg persianDescription "$ITEM_DESC_FA" \
+                  --arg image "$ITEM_IMG" \
+                  '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}'
+          )
 
-        # Add the new item to the existing JSON file
-        new_json=$(echo "$json_content" | jq ".items += [$new_item]")
-        echo "$new_json" | jq '.' > $DATA_FILE
+          # Add the new item to the existing JSON file
+          new_json=$(echo "$json_content" | jq ".items += [$new_item]")
+          echo "$new_json" | jq '.' > $DATA_FILE
 
-    - name: Commit changes
-      run: |
-        git config --global user.email "your-email@example.com"
-        git config --global user.name "Your Name"
-        git add Data.json
-        git commit -m "Added new item: ${{ github.event.inputs.title }}"
-        git push
+      - name: Commit and push changes
+        run: |
+          git config --global user.email "your-email@example.com"
+          git config --global user.name "Your Name"
+          git add Data.json
+          git commit -m "Added new item: ${{ github.event.inputs.title }}" || echo "No changes to commit"
+          # Pull remote changes and rebase your commit on top
+          git pull origin main --rebase
+          git push

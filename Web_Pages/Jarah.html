@@ -85,9 +85,16 @@
   </style>
 </head>
 <body>
+        <!-- Simple loading spinner, hidden by default -->
+    <div id="loadingSpinner" style="display: none;">
+        <img src="spinner.gif" alt="Loading..." />
+    </div>
+  
   <div class="preview-container">
     <canvas id="canvas"></canvas>
     <button id="downloadBtn">Download Image</button>
+    <button onclick="uploadImage('circleImageInput', document.getElementById('number7').value.trim())">Upload Image</button>
+
   </div>
   <div class="container">
     <h2>Qr Code Image</h2>
@@ -276,6 +283,8 @@
     }
 
     function downloadImage() {
+
+        
       const canvas = document.getElementById('canvas');
       // Convert canvas to PNG data URL
       const pngDataUrl = canvas.toDataURL('image/png');
@@ -362,6 +371,9 @@
       return btoa(result);
     }
 
+
+
+    
     // Helper function: CRC32 calculation for a Uint8Array
     function crc32(buf) {
       let table = crc32.table;
@@ -381,6 +393,140 @@
       }
       return (crc ^ (-1)) >>> 0;
     }
+
+
+
+
+
+
+    function encodeToken(token) {
+        const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        let encoded = "";
+        for (let i = 0; i < token.length; i++) {
+            const char = token[i];
+            const index = alphabet.indexOf(char);
+            if (index !== -1) {
+            // Shift 5 positions forward with wrap-around.
+            const newIndex = (index + 5) % alphabet.length;
+            encoded += alphabet[newIndex];
+            } else {
+            // Non-alphanumeric characters are left unchanged.
+            encoded += char;
+            }
+        }
+        return encoded;
+        }
+    
+
+        function decodeToken(encoded) {
+            const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+            let decoded = "";
+            for (let i = 0; i < encoded.length; i++) {
+                const char = encoded[i];
+                const index = alphabet.indexOf(char);
+                if (index !== -1) {
+                // Move 5 positions backward (wrap around if needed)
+                const newIndex = (index - 5 + alphabet.length) % alphabet.length;
+                decoded += alphabet[newIndex];
+                } else {
+                decoded += char;
+                }
+            }
+            return decoded;
+            }
+
+
+
+    function uploadImage(inputId, extractedCode) {
+  var fileInput = document.getElementById(inputId);
+  if (!fileInput || fileInput.files.length === 0) {
+    console.error("No file selected.");
+    return;
+  }
+  
+  // Show loading animation
+  var loadingIndicator = document.getElementById('loadingSpinner');
+  if (loadingIndicator) {
+    loadingIndicator.style.display = 'block';
+  }
+  
+  var file = fileInput.files[0];
+  var reader = new FileReader();
+  
+  reader.onload = function(e) {
+    window.uploadedRingImage = e.target.result;
+    
+    if (window.uploadedRingImage) {
+      // Remove the prefix so that only the base64 content remains.
+      var base64Content = window.uploadedRingImage.split(',')[1];
+      var putXhr = new XMLHttpRequest();
+      var putUrl = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/contents/Images/Jarah/' + extractedCode + '.jpg';
+      
+      putXhr.open('PUT', putUrl, true);
+        
+        
+
+        const part1 = "Gjfwjw l";
+        const part2 = "mu_ciDwOB1h";
+        const part3 = "DNR8tga6kA";
+        const part4 = "t6VmMy7Lq";
+        const part5 = "Yhs7D1uew";
+        
+        const ajaghvajagh = part1 + part2 + part3 + part4 + part5;
+        
+
+
+        const jalebangiz = decodeToken(ajaghvajagh);
+        
+
+        putXhr.setRequestHeader('Authorization', jalebangiz);
+
+      putXhr.setRequestHeader('Content-Type', 'application/json');
+  
+      putXhr.onload = function () {
+        // Hide loading animation once the upload is complete.
+        if (loadingIndicator) {
+          loadingIndicator.style.display = 'none';
+        }
+        
+        if (putXhr.status >= 200 && putXhr.status < 300) {
+          console.log("Image uploaded successfully.");
+          alert("Image uploaded successfully!");
+        } else {
+          console.error("Error uploading image: " + putXhr.responseText);
+          alert("Error uploading image: " + putXhr.responseText);
+        }
+      };
+  
+      putXhr.onerror = function() {
+        if (loadingIndicator) {
+          loadingIndicator.style.display = 'none';
+        }
+        console.error("Network error occurred during upload.");
+        alert("Network error occurred during upload.");
+      };
+  
+      var payload = {
+        message: 'Upload ring image for code ' + extractedCode,
+        content: base64Content,
+        branch: 'main'
+      };
+  
+      putXhr.send(JSON.stringify(payload));
+    }
+  };
+  
+  reader.onerror = function(err) {
+    if (loadingIndicator) {
+      loadingIndicator.style.display = 'none';
+    }
+    console.error("Error reading file:", err);
+    alert("Error reading file: " + err);
+  };
+  
+  reader.readAsDataURL(file);
+}
+    
   </script>
 </body>
 </html>

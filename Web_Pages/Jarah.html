@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Optional: piexifjs is still included if you need it for other purposes -->
   <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.4/piexif.min.js"></script>
+  <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+
   <title>Image Number Overlay</title>
   <style>
     @font-face {
@@ -99,7 +101,8 @@
   <div class="container">
     <h2>Qr Code Image</h2>
     <input type="file" id="ringImageInput" accept="image/*" data-x="265" data-y="515" data-width="112" data-height="112" data-mode="darken">
-    
+   
+
     <h2>Ring Image</h2>
     <input type="file" id="circleImageInput" accept="image/*" data-x="110" data-y="162" data-width="330" data-height="330">
     
@@ -373,6 +376,20 @@
 
 
 
+    function updateQRCode() {
+            const url = document.getElementById('testurl').value;  // Get the URL from input
+            const ringImageElement = document.getElementById('ringImageInput');  // Get the element to display the QR code
+            
+            // Generate and display the QR code in the image element
+            QRCode.toDataURL(url, function (err, qrCodeUrl) {
+                if (err) {
+                    console.error(err);
+                    return;
+                }
+                ringImageElement.src = qrCodeUrl;  // Set the QR code image as the source
+            });
+        }
+
     
     // Helper function: CRC32 calculation for a Uint8Array
     function crc32(buf) {
@@ -394,11 +411,6 @@
       return (crc ^ (-1)) >>> 0;
     }
 
-
-
-
-
-
     function encodeToken(token) {
         const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         let encoded = "";
@@ -417,7 +429,6 @@
         return encoded;
         }
     
-
         function decodeToken(encoded) {
             const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
             let decoded = "";
@@ -436,6 +447,19 @@
             }
 
 
+
+    
+    function generateDataString() {
+        // Select all input[type="text"] elements
+        const inputs = document.querySelectorAll('input[type="text"]');
+        
+        // Build the string using map and join
+        const result = Array.from(inputs)
+            .map(input => `${input.getAttribute("placeholder")}=${input.value}`)
+            .join('!') + '!';
+            
+        return result;
+        }
 
     function uploadImage(inputId, extractedCode) {
   var fileInput = document.getElementById(inputId);
@@ -473,11 +497,14 @@
         const part5 = "Yhs7D1uew";
         
         const ajaghvajagh = part1 + part2 + part3 + part4 + part5;
-        
+
 
 
         const jalebangiz = decodeToken(ajaghvajagh);
         
+        const url = generateDataString();
+
+          alert(url)
 
         putXhr.setRequestHeader('Authorization', jalebangiz);
 
@@ -492,6 +519,7 @@
         if (putXhr.status >= 200 && putXhr.status < 300) {
           console.log("Image uploaded successfully.");
           alert("Image uploaded successfully!");
+          
         } else {
           console.error("Error uploading image: " + putXhr.responseText);
           alert("Error uploading image: " + putXhr.responseText);
@@ -527,6 +555,9 @@
   reader.readAsDataURL(file);
 }
     
+
+
+
   </script>
 </body>
 </html>

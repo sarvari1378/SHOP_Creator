@@ -87,21 +87,22 @@
   </style>
 </head>
 <body>
-        <!-- Simple loading spinner, hidden by default -->
-    <div id="loadingSpinner" style="display: none;">
-        <img src="spinner.gif" alt="Loading..." />
-    </div>
+  <!-- Simple loading spinner, hidden by default -->
+  <div id="loadingSpinner" style="display: none;">
+    <img src="spinner.gif" alt="Loading..." />
+  </div>
   
   <div class="preview-container">
     <canvas id="canvas"></canvas>
     <button id="downloadBtn">Download Image</button>
     <button onclick="uploadImage('circleImageInput', document.getElementById('number7').value.trim())">Upload Image</button>
-
   </div>
+  
   <div class="container">
-    <h2>Qr Code Image</h2>
-    <input type="file" id="ringImageInput" accept="image/*" data-x="265" data-y="515" data-width="112" data-height="112" data-mode="darken">
-   
+    <!-- QR Code URL input -->
+    <h2>QR Code URL</h2>
+    <input type="text" id="qrUrlInput" placeholder="Enter URL for QR Code" 
+           data-x="265" data-y="515" data-width="112" data-height="112" data-mode="darken">
 
     <h2>Ring Image</h2>
     <input type="file" id="circleImageInput" accept="image/*" data-x="110" data-y="162" data-width="330" data-height="330">
@@ -109,23 +110,20 @@
     <h2>Scale of Image</h2>
     <input type="range" id="slider" min="0" max="1" step="0.01" value="0.5">
 
-    <h2>X posiotion</h2>
+    <h2>X position</h2>
     <input type="range" id="sliderx" min="-300" max="300" step="0.01" value="0.5">
 
-    <h2>Y posiotion</h2>
+    <h2>Y position</h2>
     <input type="range" id="slidery" min="-300" max="300" step="0.01" value="0.5">
     
     <br>
     <input type="text" id="number1" placeholder="Pedal Name" data-align="left" data-x="531" data-y="465" data-font="EnglishFont" data-x2="532" data-y2="475">
     <input type="text" id="number2" placeholder="Build Type" data-align="left" data-x="515" data-y="496" data-font="EnglishFont" data-x2="516" data-y2="506">
-
     <input type="text" id="number3" placeholder="Percentage of silver" data-align="left" data-x="606" data-y="525" data-font="EnglishFont" data-x2="606" data-y2="535">
     <input type="text" id="number4" placeholder="Type of stone" data-align="left" data-x="547" data-y="555" data-font="EnglishFont" data-x2="548" data-y2="565">
-
     <input type="text" id="number5" placeholder="Number of Diamond" data-align="left" data-x="618" data-y="585" data-font="EnglishFont" data-x2="548" data-y2="565">
     <input type="text" id="number6" placeholder="Weight" data-align="left" data-x="490" data-y="613" data-font="EnglishFont" data-x2="490" data-y2="594">
     <input type="text" id="number7" placeholder="Code" data-align="center" data-x="480" data-y="395" data-font="EnglishFont" data-font-size="34" data-x2="480" data-y2="395">
-
     <input type="text" id="number8" placeholder="اسم دواسه" data-align="right" data-x="875" data-y="463" data-font="ArabicFont" data-x2="873" data-y2="472">
     <input type="text" id="number9" placeholder="نوع صیاغه" data-align="right" data-x="875" data-y="493" data-font="ArabicFont" data-x2="873" data-y2="501">
     <input type="text" id="number10" placeholder="عیار الفضه" data-align="right" data-x="875" data-y="522" data-font="ArabicFont" data-x2="875" data-y2="530">
@@ -135,24 +133,28 @@
     <br>
   </div>
 
+  <!-- A hidden container for generating the QR code -->
+  <div id="tempQR" style="display:none;"></div>
+
   <script>
+    // Global images
     const baseImage = new Image();
     baseImage.crossOrigin = "anonymous";
     baseImage.src = 'https://sarvari1378.github.io/Files/FrontImage.jpg';
     
-    let overlayImg = new Image();
-    let ringImg = new Image();
     let circleImg = new Image();
     
-    document.getElementById('ringImageInput').addEventListener('change', event => loadImage(event, ringImg));
     document.getElementById('circleImageInput').addEventListener('change', event => loadImage(event, circleImg));
     document.getElementById('slider').addEventListener('input', generateImage);
     document.getElementById('sliderx').addEventListener('input', generateImage);
     document.getElementById('slidery').addEventListener('input', generateImage);
     document.getElementById('number5').addEventListener('input', generateImage);
-
+    
+    // Listen to all text input changes (except QR code input, which is handled separately)
     document.querySelectorAll('input[type="text"]').forEach(input => {
-      input.addEventListener('input', generateImage);
+      if(input.id !== "qrUrlInput") {
+        input.addEventListener('input', generateImage);
+      }
     });
     document.getElementById('downloadBtn').addEventListener('click', downloadImage);
     
@@ -168,9 +170,32 @@
     }
     
     baseImage.onload = generateImage;
-    overlayImg.onload = generateImage;
-    ringImg.onload = generateImage;
     circleImg.onload = generateImage;
+    
+    // --- QR Code Caching Setup ---
+    let cachedQRCode = null;
+    let lastQRCodeUrl = "";
+    const qrInput = document.getElementById('qrUrlInput');
+    
+    // Debounce QR code generation to prevent constant re-generation
+    qrInput.addEventListener('input', function() {
+      clearTimeout(qrInput.debounceTimer);
+      qrInput.debounceTimer = setTimeout(function() {
+        const newUrl = qrInput.value.trim();
+        if(newUrl && newUrl !== lastQRCodeUrl) {
+          generateQRCode(newUrl, function(qrImage) {
+             cachedQRCode = qrImage;
+             lastQRCodeUrl = newUrl;
+             generateImage(); // Re-draw canvas with the new QR code
+          });
+        } else if(!newUrl) {
+          cachedQRCode = null;
+          lastQRCodeUrl = "";
+          generateImage();
+        }
+      }, 300);
+    });
+    // --- End QR Code Caching Setup ---
     
     function generateImage() {
       const canvas = document.getElementById('canvas');
@@ -178,22 +203,23 @@
       canvas.width = baseImage.width;
       canvas.height = baseImage.height;
       ctx.drawImage(baseImage, 0, 0);
-      const numberOfDiamonds = document.getElementById('number5').value.trim();
       
+      // Update the base image source based on the "Number of Diamond" field.
+      const numberOfDiamonds = document.getElementById('number5').value.trim();
       if (numberOfDiamonds === '') {
-        // If empty, change the base image URL
         baseImage.src = 'https://sarvari1378.github.io/Files/Image_templates/Jarah_without_Dimonds.png';
       } else {
-        // If not empty, use the original base image
         baseImage.src = 'https://sarvari1378.github.io/Files/Image_templates/Jarah_with_Dimonds.png';
       }
-
-      drawImageWithMode(ctx, ringImg, document.getElementById('ringImageInput'));
+      
+      // Draw the circle (ring) image.
       drawCircleImage(ctx, circleImg, document.getElementById('circleImageInput'));
       
+      // Draw text overlays (excluding the QR URL input).
       document.querySelectorAll('input[type="text"]').forEach(input => {
+        if(input.id === "qrUrlInput") return;  // Skip the QR URL field.
         const text = input.value.trim();
-        if (text === "") return; // Prevent empty text rendering
+        if (text === "") return;
         
         const alignOptions = ['left', 'right', 'center'];
         const align = alignOptions.includes(input.dataset.align) ? input.dataset.align : 'left';
@@ -201,7 +227,7 @@
         let x = parseInt(input.dataset.x, 10) || 50;
         let y = parseInt(input.dataset.y, 10) || 50;
         
-        // Check if input with id 'number5' is empty
+        // Use alternate positioning if "Number of Diamond" is empty.
         const number5Input = document.getElementById('number5');
         if (number5Input && number5Input.value.trim() === "") {
           x = parseInt(input.dataset.x2, 10) || x;
@@ -210,24 +236,21 @@
         
         const font = input.dataset.font || 'EnglishFont';
         const fontSize = input.dataset.fontSize || '24';
-
         ctx.font = fontSize + "px " + font;
         ctx.fillStyle = "#231f20";
         ctx.textAlign = align;
         ctx.direction = align === 'right' ? 'rtl' : 'ltr';
-
         ctx.fillText(text, x, y);
       });
-    }
-    
-    function drawImageWithMode(ctx, imgElement, inputElement) {
-      if (imgElement.src) {
-        const x = parseInt(inputElement.dataset.x, 10) || 100;
-        const y = parseInt(inputElement.dataset.y, 10) || 100;
-        const width = parseInt(inputElement.dataset.width, 10) || 100;
-        const height = parseInt(inputElement.dataset.height, 10) || 100;
-        ctx.globalCompositeOperation = inputElement.dataset.mode || 'normal';
-        ctx.drawImage(imgElement, x, y, width, height);
+      
+      // Draw the cached QR code (if available).
+      if(qrInput.value.trim() !== "" && cachedQRCode) {
+        const x = parseInt(qrInput.getAttribute('data-x')) || 265;
+        const y = parseInt(qrInput.getAttribute('data-y')) || 515;
+        const width = parseInt(qrInput.getAttribute('data-width')) || 112;
+        const height = parseInt(qrInput.getAttribute('data-height')) || 112;
+        ctx.globalCompositeOperation = qrInput.getAttribute('data-mode') || 'normal';
+        ctx.drawImage(cachedQRCode, x, y, width, height);
         ctx.globalCompositeOperation = 'source-over';
       }
     }
@@ -269,41 +292,72 @@
 
         ctx.drawImage(imgElement, imgX, imgY, newImgWidth, newImgHeight);
 
-        const rectX = rectPosition.x;
-        const rectY = rectPosition.y;
-
         ctx.beginPath();
-        ctx.moveTo(rectX + 20, rectY);
-        ctx.arcTo(rectX + rectWidth, rectY, rectX + rectWidth, rectY + rectHeight, 20);
-        ctx.arcTo(rectX + rectWidth, rectY + rectHeight, rectX, rectY + rectHeight, 20);
-        ctx.arcTo(rectX, rectY + rectHeight, rectX, rectY, 20);
-        ctx.arcTo(rectX, rectY, rectX + rectWidth, rectY, 20);
+        ctx.moveTo(rectPosition.x + 20, rectPosition.y);
+        ctx.arcTo(rectPosition.x + rectWidth, rectPosition.y, rectPosition.x + rectWidth, rectPosition.y + rectHeight, 20);
+        ctx.arcTo(rectPosition.x + rectWidth, rectPosition.y + rectHeight, rectPosition.x, rectPosition.y + rectHeight, 20);
+        ctx.arcTo(rectPosition.x, rectPosition.y + rectHeight, rectPosition.x, rectPosition.y, 20);
+        ctx.arcTo(rectPosition.x, rectPosition.y, rectPosition.x + rectWidth, rectPosition.y, 20);
         ctx.closePath();
         ctx.restore();
         ctx.fillStyle = rectColor;
         ctx.fill();
       }
     }
-
+    
+    // Generates a QR code from a URL and calls back with an Image object.
+    function generateQRCode(url, callback) {
+      const tempDiv = document.getElementById('tempQR');
+      tempDiv.innerHTML = ""; // Clear any previous QR code.
+      
+      // Create a new QRCode in the hidden container.
+      new QRCode(tempDiv, {
+        text: url,
+        width: 112,
+        height: 112,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+      });
+      
+      // Wait briefly to allow rendering.
+      setTimeout(function(){
+        let qrCanvas = tempDiv.getElementsByTagName('canvas')[0];
+        if (qrCanvas) {
+          const dataUrl = qrCanvas.toDataURL("image/png");
+          const qrImage = new Image();
+          qrImage.onload = function() {
+            callback(qrImage);
+          };
+          qrImage.src = dataUrl;
+        } else {
+          let qrImgElement = tempDiv.getElementsByTagName('img')[0];
+          if (qrImgElement) {
+            const qrImage = new Image();
+            qrImage.onload = function() {
+              callback(qrImage);
+            };
+            qrImage.src = qrImgElement.src;
+          } else {
+            console.error("QR code generation failed.");
+          }
+        }
+      }, 100); // Adjust delay if needed.
+    }
+    
     function downloadImage() {
-
-        
       const canvas = document.getElementById('canvas');
-      // Convert canvas to PNG data URL
       const pngDataUrl = canvas.toDataURL('image/png');
       
-      // Convert base64 data to binary
       let binary = atob(pngDataUrl.split(',')[1]);
       let array = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) {
         array[i] = binary.charCodeAt(i);
       }
 
-      // Calculate pixels per meter for 300 DPI (~300/0.0254)
       const dpi = 300;
       const pixelsPerMeter = Math.round(dpi / 0.0254);
 
-      // Create the pHYs chunk data (9 bytes)
       const pHYsData = new Uint8Array(9);
       pHYsData[0] = (pixelsPerMeter >>> 24) & 0xFF;
       pHYsData[1] = (pixelsPerMeter >>> 16) & 0xFF;
@@ -313,12 +367,11 @@
       pHYsData[5] = (pixelsPerMeter >>> 16) & 0xFF;
       pHYsData[6] = (pixelsPerMeter >>> 8) & 0xFF;
       pHYsData[7] = (pixelsPerMeter) & 0xFF;
-      pHYsData[8] = 1; // unit: meter
+      pHYsData[8] = 1;
 
-      const chunkType = new Uint8Array([0x70, 0x48, 0x59, 0x73]); // "pHYs"
-      const lengthBytes = new Uint8Array([0, 0, 0, 9]); // 9 bytes data
+      const chunkType = new Uint8Array([0x70, 0x48, 0x59, 0x73]);
+      const lengthBytes = new Uint8Array([0, 0, 0, 9]);
 
-      // Compute CRC over chunk type + data
       const crcData = new Uint8Array(chunkType.length + pHYsData.length);
       crcData.set(chunkType, 0);
       crcData.set(pHYsData, chunkType.length);
@@ -330,14 +383,12 @@
         (crc) & 0xFF
       ]);
 
-      // Assemble the complete pHYs chunk
       const pHYsChunk = new Uint8Array(4 + 4 + 9 + 4);
       pHYsChunk.set(lengthBytes, 0);
       pHYsChunk.set(chunkType, 4);
       pHYsChunk.set(pHYsData, 8);
       pHYsChunk.set(crcBytes, 17);
 
-      // Insert the pHYs chunk after the IHDR chunk (PNG signature is 8 bytes and IHDR is 25 bytes)
       const signatureLength = 8;
       const ihdrLength = 25;
       const insertPos = signatureLength + ihdrLength;
@@ -348,7 +399,6 @@
       newPng.set(pHYsChunk, insertPos);
       newPng.set(array.slice(insertPos), insertPos + pHYsChunk.length);
 
-      // Convert the modified PNG back to a base64 data URL
       const newBase64 = uint8ToBase64(newPng);
       const newDataUrl = "data:image/png;base64," + newBase64;
 
@@ -361,7 +411,6 @@
       link.click();
     }
 
-    // Helper function: Convert Uint8Array to base64 string
     function uint8ToBase64(u8Arr) {
       const CHUNK_SIZE = 0x8000;
       let index = 0;
@@ -374,24 +423,6 @@
       return btoa(result);
     }
 
-
-
-    function updateQRCode() {
-            const url = document.getElementById('testurl').value;  // Get the URL from input
-            const ringImageElement = document.getElementById('ringImageInput');  // Get the element to display the QR code
-            
-            // Generate and display the QR code in the image element
-            QRCode.toDataURL(url, function (err, qrCodeUrl) {
-                if (err) {
-                    console.error(err);
-                    return;
-                }
-                ringImageElement.src = qrCodeUrl;  // Set the QR code image as the source
-            });
-        }
-
-    
-    // Helper function: CRC32 calculation for a Uint8Array
     function crc32(buf) {
       let table = crc32.table;
       if (!table) {
@@ -410,154 +441,123 @@
       }
       return (crc ^ (-1)) >>> 0;
     }
-
-    function encodeToken(token) {
-        const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-        let encoded = "";
-        for (let i = 0; i < token.length; i++) {
-            const char = token[i];
-            const index = alphabet.indexOf(char);
-            if (index !== -1) {
-            // Shift 5 positions forward with wrap-around.
-            const newIndex = (index + 5) % alphabet.length;
-            encoded += alphabet[newIndex];
-            } else {
-            // Non-alphanumeric characters are left unchanged.
-            encoded += char;
-            }
-        }
-        return encoded;
-        }
     
-        function decodeToken(encoded) {
-            const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-            let decoded = "";
-            for (let i = 0; i < encoded.length; i++) {
-                const char = encoded[i];
-                const index = alphabet.indexOf(char);
-                if (index !== -1) {
-                // Move 5 positions backward (wrap around if needed)
-                const newIndex = (index - 5 + alphabet.length) % alphabet.length;
-                decoded += alphabet[newIndex];
-                } else {
-                decoded += char;
-                }
-            }
-            return decoded;
-            }
-
-
-
+    function encodeToken(token) {
+      const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+      let encoded = "";
+      for (let i = 0; i < token.length; i++) {
+        const char = token[i];
+        const index = alphabet.indexOf(char);
+        if (index !== -1) {
+          const newIndex = (index + 5) % alphabet.length;
+          encoded += alphabet[newIndex];
+        } else {
+          encoded += char;
+        }
+      }
+      return encoded;
+    }
+    
+    function decodeToken(encoded) {
+      const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+      let decoded = "";
+      for (let i = 0; i < encoded.length; i++) {
+        const char = encoded[i];
+        const index = alphabet.indexOf(char);
+        if (index !== -1) {
+          const newIndex = (index - 5 + alphabet.length) % alphabet.length;
+          decoded += alphabet[newIndex];
+        } else {
+          decoded += char;
+        }
+      }
+      return decoded;
+    }
     
     function generateDataString() {
-        // Select all input[type="text"] elements
-        const inputs = document.querySelectorAll('input[type="text"]');
-        
-        // Build the string using map and join
-        const result = Array.from(inputs)
-            .map(input => `${input.getAttribute("placeholder")}=${input.value}`)
-            .join('!') + '!';
-            
-        return result;
-        }
+      const inputs = document.querySelectorAll('input[type="text"]');
+      const result = Array.from(inputs)
+          .map(input => `${input.getAttribute("placeholder")}=${input.value}`)
+          .join('!') + '!';
+      return result;
+    }
 
     function uploadImage(inputId, extractedCode) {
-  var fileInput = document.getElementById(inputId);
-  if (!fileInput || fileInput.files.length === 0) {
-    console.error("No file selected.");
-    return;
-  }
-  
-  // Show loading animation
-  var loadingIndicator = document.getElementById('loadingSpinner');
-  if (loadingIndicator) {
-    loadingIndicator.style.display = 'block';
-  }
-  
-  var file = fileInput.files[0];
-  var reader = new FileReader();
-  
-  reader.onload = function(e) {
-    window.uploadedRingImage = e.target.result;
-    
-    if (window.uploadedRingImage) {
-      // Remove the prefix so that only the base64 content remains.
-      var base64Content = window.uploadedRingImage.split(',')[1];
-      var putXhr = new XMLHttpRequest();
-      var putUrl = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/contents/Images/Jarah/' + extractedCode + '.jpg';
+      var fileInput = document.getElementById(inputId);
+      if (!fileInput || fileInput.files.length === 0) {
+        console.error("No file selected.");
+        return;
+      }
       
-      putXhr.open('PUT', putUrl, true);
-        
-        
-
-        const part1 = "Gjfwjw l";
-        const part2 = "mu_ciDwOB1h";
-        const part3 = "DNR8tga6kA";
-        const part4 = "t6VmMy7Lq";
-        const part5 = "Yhs7D1uew";
-        
-        const ajaghvajagh = part1 + part2 + part3 + part4 + part5;
-
-
-
-        const jalebangiz = decodeToken(ajaghvajagh);
-        
-        const url = generateDataString();
-
-          alert(url)
-
-        putXhr.setRequestHeader('Authorization', jalebangiz);
-
-      putXhr.setRequestHeader('Content-Type', 'application/json');
-  
-      putXhr.onload = function () {
-        // Hide loading animation once the upload is complete.
-        if (loadingIndicator) {
-          loadingIndicator.style.display = 'none';
-        }
-        
-        if (putXhr.status >= 200 && putXhr.status < 300) {
-          console.log("Image uploaded successfully.");
-          alert("Image uploaded successfully!");
+      var loadingIndicator = document.getElementById('loadingSpinner');
+      if (loadingIndicator) {
+        loadingIndicator.style.display = 'block';
+      }
+      
+      var file = fileInput.files[0];
+      var reader = new FileReader();
+      
+      reader.onload = function(e) {
+        window.uploadedRingImage = e.target.result;
+        if (window.uploadedRingImage) {
+          var base64Content = window.uploadedRingImage.split(',')[1];
+          var putXhr = new XMLHttpRequest();
+          var putUrl = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/contents/Images/Jarah/' + extractedCode + '.jpg';
+          putXhr.open('PUT', putUrl, true);
           
-        } else {
-          console.error("Error uploading image: " + putXhr.responseText);
-          alert("Error uploading image: " + putXhr.responseText);
+          const part1 = "Gjfwjw l";
+          const part2 = "mu_ciDwOB1h";
+          const part3 = "DNR8tga6kA";
+          const part4 = "t6VmMy7Lq";
+          const part5 = "Yhs7D1uew";
+          const ajaghvajagh = part1 + part2 + part3 + part4 + part5;
+          const jalebangiz = decodeToken(ajaghvajagh);
+          const url = generateDataString();
+          alert(url);
+          putXhr.setRequestHeader('Authorization', jalebangiz);
+          putXhr.setRequestHeader('Content-Type', 'application/json');
+      
+          putXhr.onload = function () {
+            if (loadingIndicator) {
+              loadingIndicator.style.display = 'none';
+            }
+            if (putXhr.status >= 200 && putXhr.status < 300) {
+              console.log("Image uploaded successfully.");
+              alert("Image uploaded successfully!");
+            } else {
+              console.error("Error uploading image: " + putXhr.responseText);
+              alert("Error uploading image: " + putXhr.responseText);
+            }
+          };
+      
+          putXhr.onerror = function() {
+            if (loadingIndicator) {
+              loadingIndicator.style.display = 'none';
+            }
+            console.error("Network error occurred during upload.");
+            alert("Network error occurred during upload.");
+          };
+      
+          var payload = {
+            message: 'Upload ring image for code ' + extractedCode,
+            content: base64Content,
+            branch: 'main'
+          };
+      
+          putXhr.send(JSON.stringify(payload));
         }
       };
-  
-      putXhr.onerror = function() {
+      
+      reader.onerror = function(err) {
         if (loadingIndicator) {
           loadingIndicator.style.display = 'none';
         }
-        console.error("Network error occurred during upload.");
-        alert("Network error occurred during upload.");
+        console.error("Error reading file:", err);
+        alert("Error reading file: " + err);
       };
-  
-      var payload = {
-        message: 'Upload ring image for code ' + extractedCode,
-        content: base64Content,
-        branch: 'main'
-      };
-  
-      putXhr.send(JSON.stringify(payload));
+      
+      reader.readAsDataURL(file);
     }
-  };
-  
-  reader.onerror = function(err) {
-    if (loadingIndicator) {
-      loadingIndicator.style.display = 'none';
-    }
-    console.error("Error reading file:", err);
-    alert("Error reading file: " + err);
-  };
-  
-  reader.readAsDataURL(file);
-}
-    
-
-
-
   </script>
 </body>
 </html>

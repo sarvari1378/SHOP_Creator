@@ -34,7 +34,7 @@ jobs:
         id: image_url
         run: |
           IMAGE_NAME="${{ github.event.inputs.image }}"
-          IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${IMAGE_NAME}"
+          IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/Jarah/${IMAGE_NAME}"
           echo "image_url=$IMAGE_RAW_URL" >> $GITHUB_ENV
 
       - name: Format descriptions and add item to jarah.json

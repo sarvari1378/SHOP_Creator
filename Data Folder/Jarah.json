@@ -1,1 +1,10 @@
-
+{
+  "items": [
+    {
+      "title": "1000",
+      "englishDescription": "\nRing identification certificate \nRing model:grid \nType of craftsmanship:Hand-made \nSilver carat:925 \nType of stone:Opal Number of diamond:38 \nWeight:25",
+      "persianDescription": "الشهادة التعريفية للخاتم \nمديل الخاتم:مشبک \nنوع الصياغة:یدوی(شریف) \nعيار الفضه:925 \nنوع الحجر:اوبال عدد الألماس:38 \nالوزن:25",
+      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/1000.jpg"
+    }
+      ]
+}

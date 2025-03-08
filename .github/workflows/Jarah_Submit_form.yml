@@ -1,4 +1,4 @@
-name: Add Item to JSON
+name: Jarah_Submit_Form
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Jarah_Submit_Form
+name: Abbasi_Submit_Form
 
 on:
   workflow_dispatch:

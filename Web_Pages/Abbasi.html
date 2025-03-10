@@ -273,28 +273,31 @@
 
       // When code input changes, update the QR code URL.
       document.getElementById("number13").addEventListener("input", function () {
-        let codeValue = this.value.trim();
-        if (codeValue.toLowerCase().startsWith("code:")) {
-          codeValue = codeValue.substring(5).trim();
-        }
-        if (codeValue.toLowerCase().startsWith("A.R")) {
-          codeValue = codeValue.substring(3).trim();
-        }
-        if (codeValue) {
-          const codeNum = parseInt(codeValue, 10);
-          if (!isNaN(codeNum)) {
-            /// start number of site (change)
-            const itemNumber = codeNum - 2000;
-            
-            /// Adres of site (change)
-            const qrURL = "https://noisy-frog-7c91.alzareie7915.workers.dev/item_" + itemNumber;
-            const qrInput = document.getElementById("ringImageInput");
-            qrInput.value = qrURL;
-            const changeEvent = new Event("change");
-            qrInput.dispatchEvent(changeEvent);
-          }
-        }
-      });
+  // Use the extractCode function to get the numeric part of the input
+  let codeValue = extractCode(this.value);
+  
+  // If no digits are found, clear the QR input and exit
+  if (!codeValue) {
+    document.getElementById("ringImageInput").value = "";
+    return;
+  }
+  
+  const codeNum = parseInt(codeValue, 10);
+  if (!isNaN(codeNum)) {
+    // Calculate the item number (adjust as needed)
+    const itemNumber = codeNum - 2000;
+    
+    // Construct the QR code URL
+    const qrURL = "https://noisy-frog-7c91.alzareie7915.workers.dev/item_" + itemNumber;
+    const qrInput = document.getElementById("ringImageInput");
+    qrInput.value = qrURL;
+    
+    // Dispatch a change event to update the QR image
+    const changeEvent = new Event("change");
+    qrInput.dispatchEvent(changeEvent);
+  }
+});
+
 
       // Update text areas on input change (for descriptions)
       document.querySelectorAll("input[type='text']:not(#ringImageInput), textarea")

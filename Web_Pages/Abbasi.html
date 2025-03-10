@@ -189,6 +189,7 @@
       data-font="EnglishFont"
       data-fontsize = "110"
       data-color="#231f20"
+      value = "A.R"
       
     />
     <br>
@@ -275,6 +276,9 @@
         let codeValue = this.value.trim();
         if (codeValue.toLowerCase().startsWith("code:")) {
           codeValue = codeValue.substring(5).trim();
+        }
+        if (codeValue.toLowerCase().startsWith("A.R")) {
+          codeValue = codeValue.substring(3).trim();
         }
         if (codeValue) {
           const codeNum = parseInt(codeValue, 10);

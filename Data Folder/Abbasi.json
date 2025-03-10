@@ -1,60 +1,6 @@
 {
   "items": [
     {
-      "title": "1000",
-      "englishDescription": "Pedal Name:a;lksdjf\nBuild \nType:asd;klfj;alsfjk\nPercentage of silver:;aksjdf;laksj\n\nType of stone:asl;kdfj;aslkj\nNumber of Diamond:a;lskjdf;lasjkdf\n\nWeight:asl;kdfja;sldkfj",
-      "persianDescription": "اسم دواسه:شکسیتکشمنستیب\n\nنوع صیاغه:شسکمنیتبکشسمتنیب\nعیار الفضه:شسمکیتنبشکمستیب\nخاتم التوقیع:شمسنکیتبشکمسنیبت\nعدد الماس: شسکمیتبشمسبت\n\nالوزن: شکمنسیتبکشسمتنب",
-      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/Jarah/111.jpg"
-    },
-    {
-      "title": "1001",
-      "englishDescription": "Pedal Name: sajed sarvari\nBuild \nType: was here\nPercentage of silver: and do all the things\n\nType of stone: firoze\nNumber of Diamond: 24\n\nWeight: 45",
-      "persianDescription": "اسم دواسه: ساجد سروری\n\nنوع صیاغه: اینجا بوده است\nعیار الفضه: و همه کار ها را انجام داده است\nخاتم التوقیع: فیروزه\nعدد الماس: ۲۴\n\nالوزن: ۴۵",
-      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/Abbasi/1001.jpg"
-    },
-    {
-      "title": "2000",
-      "englishDescription": "Pedal Name:mirror\nBuild \nType:Hand-made\nPercentage of silver:925\n\nType of stone:Agate\n\nWeight:34",
-      "persianDescription": "اسم دواسه:مرصع\n\nنوع صیاغه:یدوی عباسیR\nعیار الفضه:925\nخاتم التوقیع:العقیق یمانی\n\nالوزن:34",
-      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/Abbasi/2000.jpg"
-    },
-    {
-      "title": "2000",
-      "englishDescription": "Pedal Name: mirror\nBuild \nType: Hand made\nPercentage of silver: 925\n\nType of stone:Agate\n\nWeight:34",
-      "persianDescription": "اسم دواسه:مرصع\n\nنوع صیاغه: یدوی عباسی R\nعیار الفضه: 925\nخاتم التوقیع:العقیق یمانی\n\nالوزن:34",
-      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/Abbasi/2000.jpg"
-    },
-    {
-      "title": "2000",
-      "englishDescription": "Pedal Name: mirror\nBuild \nType: Hand made\nPercentage of silver: 925\n\nType of stone:Agate\n\nWeight:34",
-      "persianDescription": "اسم دواسه:مرصع\n\nنوع صیاغه: یدوی عباسی R\nعیار الفضه: 925\nخاتم التوقیع:العقیق یمانی\n\nالوزن:34",
-      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/Abbasi/2000.jpg"
-    },
-    {
-      "title": "2001",
-      "englishDescription": "Pedal Name: mirror\nBuild \nType: Hand made\nPercentage of silver: 925\n\nType of stone:Agate\n\nWeight:34",
-      "persianDescription": "اسم دواسه:مرصع\n\nنوع صیاغه: یدوی عباسی R\nعیار الفضه: 925\nخاتم التوقیع:العقیق یمانی\nعدد الماس:16\n\nالوزن:16",
-      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/Abbasi/2001.jpg"
-    },
-    {
-      "title": "2001",
-      "englishDescription": "Pedal Name: mirror\nBuild \nType: Hand made\nPercentage of silver: 925\n\nType of stone:torquoise\nNumber of diamond:16\n\nWeight:24",
-      "persianDescription": "اسم دواسه:مرصع\n\nنوع صیاغه: یدوی عباسی R\nعیار الفضه: 925\nخاتم التوقیع:الفیروز نیشابوری\nعدد الماس:16\n\nالوزن:24",
-      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/Abbasi/2001.jpg"
-    },
-    {
-      "title": "2001",
-      "englishDescription": "Pedal Name: \nBuild \nType: Hand made\nPercentage of silver: 925\n\nType of stone:\nNumber of Diamond:\n\nWeight:",
-      "persianDescription": "اسم دواسه:\n\nنوع صیاغه: یدوی عباسی R\nعیار الفضه: 925\nخاتم التوقیع:\nعدد الماس:\n\nالوزن:",
-      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/Abbasi/2001.jpg"
-    },
-    {
-      "title": "2002",
-      "englishDescription": "Pedal Name: Engraving\nBuild \nType: Hand made\nPercentage of silver: 925\n\nType of stone:torquoise\nNumber of diamond:20\n\nWeight:20",
-      "persianDescription": "اسم دواسه:قلم زنی\n\nنوع صیاغه: یدوی عباسی R\nعیار الفضه: 925\nخاتم التوقیع:الفیروز نیشابوری\nعدد الماس:20\n\nالوزن:20",
-      "image": "https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/main/Images/Abbasi/2002.jpg"
-    },
-    {
       "title": "2001",
       "englishDescription": "Pedal Name: mirror\nBuild \nType: Hand made\nPercentage of silver: 925\n\nType of stone:torquoise\nNumber of diamond:16\n\nWeight:24",
       "persianDescription": "اسم دواسه:مرصع\n\nنوع صیاغه: یدوی عباسی R\nعیار الفضه: 925\nخاتم التوقیع:الفیروز نیشابوری\nعدد الماس:16\n\nالوزن:24",

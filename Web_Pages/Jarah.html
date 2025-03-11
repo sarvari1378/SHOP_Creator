@@ -116,7 +116,7 @@
     <button id="downloadBtn" onclick="submitForm(event)">Download Image</button>
   </div>
   <div class="container">
-    <h2>QR Code Image</h2>
+    <h2>تصویر کیو آر کد</h2>
     <!-- This input will be automatically filled based on the code input (change) -->
     <input
       type="text"
@@ -129,7 +129,7 @@
       data-mode="darken"
     />
 
-    <h2>Ring Image</h2>
+    <h2>تصویر انگشتر</h2>
     <input
       type="file"
       id="circleImageInput"
@@ -141,13 +141,13 @@
       data-Roundness="75"
     />
 
-    <h2>Scale of Image</h2>
+    <h2>میزان بزرگنمایی</h2>
     <input type="range" id="slider" min="0" max="5" step="0.01" value="1">
 
-    <h2>X posiotion</h2>
+    <h2>حرکت در راست و چپ</h2>
     <input type="range" id="sliderx" min="-700" max="700" step="0.01" value="0.5">
 
-    <h2>Y posiotion</h2>
+    <h2>حرکت در بالا و پایین</h2>
     <input type="range" id="slidery" min="-700" max="700" step="0.01" value="0.5">
     <br />
 
@@ -261,27 +261,31 @@
       document.getElementById('sliderx').addEventListener('input', generateImage);
       document.getElementById('slidery').addEventListener('input', generateImage);
 
-      // When code input changes, update the QR code URL.
       document.getElementById("number13").addEventListener("input", function () {
-        let codeValue = this.value.trim();
-        if (codeValue.toLowerCase().startsWith("code:")) {
-          codeValue = codeValue.substring(5).trim();
-        }
-        if (codeValue) {
-          const codeNum = parseInt(codeValue, 10);
-          if (!isNaN(codeNum)) {
-            /// start number of site (change)
-            const itemNumber = codeNum - 1000;
-            
-            /// Adres of site (change)
-            const qrURL = "https://spring-mud-42b8.alzareie7915.workers.dev/item_" + itemNumber;
-            const qrInput = document.getElementById("ringImageInput");
-            qrInput.value = qrURL;
-            const changeEvent = new Event("change");
-            qrInput.dispatchEvent(changeEvent);
-          }
-        }
-      });
+  // Use the extractCode function to get the numeric part of the input
+  let codeValue = extractCode(this.value);
+  
+  // If no digits are found, clear the QR input and exit
+  if (!codeValue) {
+    document.getElementById("ringImageInput").value = "";
+    return;
+  }
+  
+  const codeNum = parseInt(codeValue, 10);
+  if (!isNaN(codeNum)) {
+    // Calculate the item number (adjust as needed)
+    const itemNumber = codeNum - 2000;
+    
+    // Construct the QR code URL
+    const qrURL = "https://noisy-frog-7c91.alzareie7915.workers.dev/item_" + itemNumber;
+    const qrInput = document.getElementById("ringImageInput");
+    qrInput.value = qrURL;
+    
+    // Dispatch a change event to update the QR image
+    const changeEvent = new Event("change");
+    qrInput.dispatchEvent(changeEvent);
+  }
+});
 
       // Update text areas on input change (for descriptions)
       document.querySelectorAll("input[type='text']:not(#ringImageInput), textarea")

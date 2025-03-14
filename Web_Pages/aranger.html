@@ -11,65 +11,74 @@
 </head>
 <body>
   <h2>Create a Canvas</h2>
-  <label>Width (cm):
+
+  <label>Preset:
+    <select id="preset" onchange="applyPreset()">
+      <option value="custom">Custom</option>
+      <option value="A4">A4 (300 DPI)</option>
+      <option value="A3">A3 (300 DPI)</option>
+      <option value="A5">A5 (300 DPI)</option>
+    </select>
+  </label>
+  <br><br>
+
+  <label>عرض (cm):
     <input type="number" id="widthCm" value="15" onchange="updateCanvasSize()">
   </label>
-  <label>Height (cm):
+  <label>ارتفاع (cm):
     <input type="number" id="heightCm" value="15" onchange="updateCanvasSize()">
   </label>
   <label>DPI:
-    <input type="number" id="dpi" value="96" onchange="updateCanvasSize()">
+    <input type="number" id="dpi" value="300" onchange="updateCanvasSize()">
   </label>
   <br><br>
-  <label>Image Gap (cm):
-    <input type="number" id="gap" value="1" onchange="updateCanvasSize()">
+  <label>فاصله بین عکس ها (cm):
+    <input type="number" id="gap" value="0.1" onchange="updateCanvasSize()">
   </label>
   <br><br>
-  <!-- Allow multiple images to be selected -->
+
   <input type="file" id="imageInput" accept="image/*" multiple onchange="addImages(event)">
   <br><br>
+
   <canvas id="canvas"></canvas>
   <br><br>
-  <!-- Download button -->
+
   <button id="downloadBtn" onclick="downloadCanvas()">Download PNG Canvas</button>
 
   <script>
-    let images = []; // Array to store images
+    let images = [];
     let canvasWidth = 500;
     let canvasHeight = 500;
     let dpi = 96;
     let gap = 10;
-    
-    // Convert centimeters to pixels based on the DPI
+
     function cmToPixels(cm, dpi) {
       return cm * (dpi / 2.54);
     }
-    
-    // Update canvas dimensions and redraw images
+
     function updateCanvasSize() {
       const widthCm = parseFloat(document.getElementById('widthCm').value);
       const heightCm = parseFloat(document.getElementById('heightCm').value);
       dpi = parseInt(document.getElementById('dpi').value);
-      // Convert the gap from cm to pixels
       gap = cmToPixels(parseFloat(document.getElementById('gap').value), dpi);
-      
+
       canvasWidth = cmToPixels(widthCm, dpi);
       canvasHeight = cmToPixels(heightCm, dpi);
-      
+
       const canvas = document.getElementById('canvas');
       const ctx = canvas.getContext('2d');
-      
+
       canvas.width = canvasWidth;
       canvas.height = canvasHeight;
       canvas.style.width = widthCm + 'cm';
       canvas.style.height = heightCm + 'cm';
-      
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       let x = gap;
       let y = gap;
       let rowHeight = 0;
-      
+
       images.forEach((image) => {
         if (x + image.width > canvas.width) {
           x = gap;
@@ -81,13 +90,30 @@
         rowHeight = Math.max(rowHeight, image.height);
       });
     }
-    
-    // Load selected images onto the canvas
+
+    function applyPreset() {
+      const preset = document.getElementById('preset').value;
+      if (preset === "A4") {
+        document.getElementById('widthCm').value = 21;
+        document.getElementById('heightCm').value = 29.7;
+        document.getElementById('dpi').value = 300;
+      } else if (preset === "A3") {
+        document.getElementById('widthCm').value = 29.7;
+        document.getElementById('heightCm').value = 42;
+        document.getElementById('dpi').value = 300;
+    } else if (preset === "A5") {
+        document.getElementById('widthCm').value = 14.8;
+        document.getElementById('heightCm').value = 21;
+        document.getElementById('dpi').value = 300;
+      }
+      updateCanvasSize();
+    }
+
     function addImages(event) {
       const input = event.target;
       const files = input.files;
       if (files.length === 0) return;
-      
+
       Array.from(files).forEach((file) => {
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -101,8 +127,66 @@
         reader.readAsDataURL(file);
       });
     }
-    
-    // CRC32 implementation for calculating chunk CRCs
+
+    function downloadCanvas() {
+      const canvas = document.getElementById('canvas');
+      let userDpi = parseInt(document.getElementById('dpi').value);
+      let dataURL = canvas.toDataURL("image/png");
+
+      let binary = atob(dataURL.split(',')[1]);
+      let len = binary.length;
+      let buffer = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        buffer[i] = binary.charCodeAt(i);
+      }
+      let arrayBuffer = buffer.buffer;
+      let newArrayBuffer = insertpHYsChunk(arrayBuffer, userDpi);
+
+      let blob = new Blob([newArrayBuffer], { type: 'image/png' });
+      let link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'canvas_' + userDpi + 'dpi.png';
+      link.click();
+    }
+
+    function insertpHYsChunk(arrayBuffer, dpi) {
+      let ppm = Math.round(dpi * 39.3701);
+      let original = new Uint8Array(arrayBuffer);
+      let ihdrEnd = 8 + 25;
+      let before = original.slice(0, ihdrEnd);
+      let after = original.slice(ihdrEnd);
+
+      let chunkType = new Uint8Array([112, 72, 89, 115]);
+      let chunkData = new Uint8Array(9);
+      let view = new DataView(chunkData.buffer);
+      view.setUint32(0, ppm, false);
+      view.setUint32(4, ppm, false);
+      chunkData[8] = 1;
+
+      let lengthBytes = new Uint8Array(4);
+      new DataView(lengthBytes.buffer).setUint32(0, 9, false);
+
+      let crcInput = new Uint8Array(4 + 9);
+      crcInput.set(chunkType, 0);
+      crcInput.set(chunkData, 4);
+      let crcValue = crc32(crcInput);
+      let crcBytes = new Uint8Array(4);
+      new DataView(crcBytes.buffer).setUint32(0, crcValue, false);
+
+      let pHYsChunk = new Uint8Array(4 + 4 + 9 + 4);
+      pHYsChunk.set(lengthBytes, 0);
+      pHYsChunk.set(chunkType, 4);
+      pHYsChunk.set(chunkData, 8);
+      pHYsChunk.set(crcBytes, 8 + 9);
+
+      let newPng = new Uint8Array(before.length + pHYsChunk.length + after.length);
+      newPng.set(before, 0);
+      newPng.set(pHYsChunk, before.length);
+      newPng.set(after, before.length + pHYsChunk.length);
+
+      return newPng.buffer;
+    }
+
     function crc32(buf) {
       let table = window.crcTable;
       if (!table) {
@@ -120,80 +204,6 @@
         crc = (crc >>> 8) ^ table[(crc ^ buf[i]) & 0xFF];
       }
       return (crc ^ (-1)) >>> 0;
-    }
-    
-    // Insert a pHYs chunk (specifying pixel density) into a PNG ArrayBuffer.
-    function insertpHYsChunk(arrayBuffer, dpi) {
-      let ppm = Math.round(dpi * 39.3701); // Convert DPI to pixels per meter
-      let original = new Uint8Array(arrayBuffer);
-      
-      // PNG signature (8 bytes) + IHDR chunk (25 bytes) = 33 bytes total.
-      let ihdrEnd = 8 + 25;
-      let before = original.slice(0, ihdrEnd);
-      let after = original.slice(ihdrEnd);
-      
-      // Build the pHYs chunk:
-      let chunkType = new Uint8Array([112, 72, 89, 115]); // "pHYs"
-      let chunkData = new Uint8Array(9);
-      let view = new DataView(chunkData.buffer);
-      view.setUint32(0, ppm, false); // x pixels per unit (big-endian)
-      view.setUint32(4, ppm, false); // y pixels per unit (big-endian)
-      chunkData[8] = 1; // unit specifier: 1 means meters
-      
-      // Length of the chunk data (9 bytes)
-      let lengthBytes = new Uint8Array(4);
-      new DataView(lengthBytes.buffer).setUint32(0, 9, false);
-      
-      // Calculate CRC over the chunk type and chunk data
-      let crcInput = new Uint8Array(4 + 9);
-      crcInput.set(chunkType, 0);
-      crcInput.set(chunkData, 4);
-      let crcValue = crc32(crcInput);
-      let crcBytes = new Uint8Array(4);
-      new DataView(crcBytes.buffer).setUint32(0, crcValue, false);
-      
-      // Construct the pHYs chunk: length + type + data + CRC
-      let pHYsChunk = new Uint8Array(4 + 4 + 9 + 4);
-      pHYsChunk.set(lengthBytes, 0);
-      pHYsChunk.set(chunkType, 4);
-      pHYsChunk.set(chunkData, 8);
-      pHYsChunk.set(crcBytes, 8 + 9);
-      
-      // Create the new PNG data by inserting the pHYs chunk after the IHDR chunk.
-      let newPng = new Uint8Array(before.length + pHYsChunk.length + after.length);
-      newPng.set(before, 0);
-      newPng.set(pHYsChunk, before.length);
-      newPng.set(after, before.length + pHYsChunk.length);
-      
-      return newPng.buffer;
-    }
-    
-    // Download the canvas as a PNG with the user-determined DPI embedded
-    function downloadCanvas() {
-      const canvas = document.getElementById('canvas');
-      let userDpi = parseInt(document.getElementById('dpi').value);
-      
-      // Convert canvas to a PNG data URL
-      let dataURL = canvas.toDataURL("image/png");
-      
-      // Decode the base64 dataURL into an ArrayBuffer
-      let binary = atob(dataURL.split(',')[1]);
-      let len = binary.length;
-      let buffer = new Uint8Array(len);
-      for (let i = 0; i < len; i++) {
-        buffer[i] = binary.charCodeAt(i);
-      }
-      let arrayBuffer = buffer.buffer;
-      
-      // Insert the pHYs chunk with the desired DPI
-      let newArrayBuffer = insertpHYsChunk(arrayBuffer, userDpi);
-      
-      // Create a Blob from the new ArrayBuffer and trigger a download
-      let blob = new Blob([newArrayBuffer], { type: 'image/png' });
-      let link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'canvas_' + userDpi + 'dpi.png';
-      link.click();
     }
   </script>
 </body>

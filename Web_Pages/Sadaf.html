@@ -442,8 +442,8 @@
       // Function to download the final canvas image with DPI metadata
       function downloadImage() {
         const canvas = document.getElementById("canvas");
-        const targetWidth = Math.round((8.5 / 2.54) * 350);
-        const targetHeight = Math.round((5.4 / 2.54) * 350);
+        const targetWidth = Math.round((8.5 / 2.54) * 300);
+        const targetHeight = Math.round((5.6 / 2.54) * 300);
         const tempCanvas = document.createElement("canvas");
         tempCanvas.width = targetWidth;
         tempCanvas.height = targetHeight;
@@ -452,8 +452,8 @@
         const imgData = tempCanvas.toDataURL("image/jpeg");
         let exifObj = {
           "0th": {
-            [piexif.ImageIFD.XResolution]: [350, 1],
-            [piexif.ImageIFD.YResolution]: [350, 1],
+            [piexif.ImageIFD.XResolution]: [300, 1],
+            [piexif.ImageIFD.YResolution]: [300, 1],
             [piexif.ImageIFD.ResolutionUnit]: 2
           }
         };

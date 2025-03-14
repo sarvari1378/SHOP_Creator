@@ -461,72 +461,92 @@
       // Initially update the text areas.
       updateTextAreas();
 
-      // Function to download the final canvas image with DPI metadata
+          // Function to download the final canvas image with DPI metadata
       function downloadImage() {
-      const canvas = document.getElementById('canvas');
-      const pngDataUrl = canvas.toDataURL('image/png');
-      
-      let binary = atob(pngDataUrl.split(',')[1]);
-      let array = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        array[i] = binary.charCodeAt(i);
-      }
+  // Hardcoded width, height (in cm), and DPI
+  const widthCm = 9;  // Example: 10 cm width
+  const heightCm = 6; // Example: 15 cm height
+  const dpi = 300;     // Example: 300 DPI
 
-      const dpi = 300;
-      const pixelsPerMeter = Math.round(dpi / 0.0254);
+  // Convert CM to Pixels
+  const widthPx = Math.round(widthCm * (dpi / 2.54));
+  const heightPx = Math.round(heightCm * (dpi / 2.54));
 
-      const pHYsData = new Uint8Array(9);
-      pHYsData[0] = (pixelsPerMeter >>> 24) & 0xFF;
-      pHYsData[1] = (pixelsPerMeter >>> 16) & 0xFF;
-      pHYsData[2] = (pixelsPerMeter >>> 8) & 0xFF;
-      pHYsData[3] = (pixelsPerMeter) & 0xFF;
-      pHYsData[4] = (pixelsPerMeter >>> 24) & 0xFF;
-      pHYsData[5] = (pixelsPerMeter >>> 16) & 0xFF;
-      pHYsData[6] = (pixelsPerMeter >>> 8) & 0xFF;
-      pHYsData[7] = (pixelsPerMeter) & 0xFF;
-      pHYsData[8] = 1;
+  // Create a new temporary canvas with new size
+  const canvas = document.getElementById('canvas');
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = widthPx;
+  tempCanvas.height = heightPx;
+  const ctx = tempCanvas.getContext('2d');
 
-      const chunkType = new Uint8Array([0x70, 0x48, 0x59, 0x73]);
-      const lengthBytes = new Uint8Array([0, 0, 0, 9]);
+  // Draw the original canvas content into new size
+  ctx.drawImage(canvas, 0, 0, widthPx, heightPx);
 
-      const crcData = new Uint8Array(chunkType.length + pHYsData.length);
-      crcData.set(chunkType, 0);
-      crcData.set(pHYsData, chunkType.length);
-      const crc = crc32(crcData);
-      const crcBytes = new Uint8Array([
-        (crc >>> 24) & 0xFF,
-        (crc >>> 16) & 0xFF,
-        (crc >>> 8) & 0xFF,
-        (crc) & 0xFF
-      ]);
+  // Convert the canvas to PNG Base64
+  const pngDataUrl = tempCanvas.toDataURL('image/png');
+  let binary = atob(pngDataUrl.split(',')[1]);
+  let array = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    array[i] = binary.charCodeAt(i);
+  }
 
-      const pHYsChunk = new Uint8Array(4 + 4 + 9 + 4);
-      pHYsChunk.set(lengthBytes, 0);
-      pHYsChunk.set(chunkType, 4);
-      pHYsChunk.set(pHYsData, 8);
-      pHYsChunk.set(crcBytes, 17);
+  // Convert DPI to pixels per meter
+  const pixelsPerMeter = Math.round(dpi / 0.0254);
+  const pHYsData = new Uint8Array(9);
+  for (let i = 0; i < 4; i++) {
+    pHYsData[i] = (pixelsPerMeter >>> ((3 - i) * 8)) & 0xFF;
+    pHYsData[i + 4] = (pixelsPerMeter >>> ((3 - i) * 8)) & 0xFF;
+  }
+  pHYsData[8] = 1; // Unit: meters
 
-      const signatureLength = 8;
-      const ihdrLength = 25;
-      const insertPos = signatureLength + ihdrLength;
+  // Create pHYs Chunk
+  const chunkType = new Uint8Array([0x70, 0x48, 0x59, 0x73]); // "pHYs"
+  const lengthBytes = new Uint8Array([0, 0, 0, 9]); // 9-byte chunk
 
-      const newLength = array.length + pHYsChunk.length;
-      let newPng = new Uint8Array(newLength);
-      newPng.set(array.slice(0, insertPos), 0);
-      newPng.set(pHYsChunk, insertPos);
-      newPng.set(array.slice(insertPos), insertPos + pHYsChunk.length);
+  const crcData = new Uint8Array(chunkType.length + pHYsData.length);
+  crcData.set(chunkType, 0);
+  crcData.set(pHYsData, chunkType.length);
+  const crc = crc32(crcData);
+  const crcBytes = new Uint8Array([
+    (crc >>> 24) & 0xFF,
+    (crc >>> 16) & 0xFF,
+    (crc >>> 8) & 0xFF,
+    (crc) & 0xFF
+  ]);
 
-      const newBase64 = uint8ToBase64(newPng);
-      const newDataUrl = "data:image/png;base64," + newBase64;
+  const pHYsChunk = new Uint8Array(4 + 4 + 9 + 4);
+  pHYsChunk.set(lengthBytes, 0);
+  pHYsChunk.set(chunkType, 4);
+  pHYsChunk.set(pHYsData, 8);
+  pHYsChunk.set(crcBytes, 17);
 
-      const codeInput = document.getElementById('number13').value.trim();
-      const fileName = codeInput ? codeInput + ".png" : "image_with_300dpi.png";
+  // Insert pHYs Chunk into PNG Data
+  const signatureLength = 8;
+  const ihdrLength = 25;
+  const insertPos = signatureLength + ihdrLength;
 
-      const link = document.createElement('a');
-      link.href = newDataUrl;
-      link.download = fileName;
-      link.click();
-    }
+  const newLength = array.length + pHYsChunk.length;
+  let newPng = new Uint8Array(newLength);
+  newPng.set(array.slice(0, insertPos), 0);
+  newPng.set(pHYsChunk, insertPos);
+  newPng.set(array.slice(insertPos), insertPos + pHYsChunk.length);
+
+  // Convert back to Base64 for download
+  const newBase64 = uint8ToBase64(newPng);
+  const newDataUrl = "data:image/png;base64," + newBase64;
+
+  // Set filename
+  const codeInput = document.getElementById('number13').value.trim();
+  const fileName = codeInput ? codeInput + ".png" : "image_with_300dpi.png";
+  
+  // Create download link and trigger download
+  const link = document.createElement('a');
+  link.href = newDataUrl;
+  link.download = fileName;
+  link.click();
+}
+
+
 
     function crc32(buf) {
       let table = crc32.table;

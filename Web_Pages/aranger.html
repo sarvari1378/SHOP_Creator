@@ -4,9 +4,53 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Canvas Creator with Custom PNG DPI and Gap in CM</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; }
-    canvas { border: 1px solid black; margin-top: 10px; }
+    <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      margin: auto;
+    }
+    label, select, input {
+      margin: 5px 0;
+      display: block;
+      width: 100%;
+    }
+    input[type="number"], select {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    canvas {
+      border: 1px solid black;
+      display: block;
+      margin: 20px auto;
+      background: white;
+    }
+
+    
   </style>
 </head>
 <body>
@@ -36,7 +80,7 @@
     <input type="number" id="gap" value="0.1" onchange="updateCanvasSize()">
   </label>
   <br><br>
-
+  <button onclick="swapWidthHeight()">چرخوندن ۹۰ درجه</button>
   <input type="file" id="imageInput" accept="image/*" multiple onchange="addImages(event)">
   <br><br>
 
@@ -49,8 +93,17 @@
     let images = [];
     let canvasWidth = 500;
     let canvasHeight = 500;
-    let dpi = 96;
+    let dpi = 300;
     let gap = 10;
+
+    function swapWidthHeight() {
+      let widthInput = document.getElementById('widthCm');
+      let heightInput = document.getElementById('heightCm');
+      let temp = widthInput.value;
+      widthInput.value = heightInput.value;
+      heightInput.value = temp;
+      updateCanvasSize();
+    }
 
     function cmToPixels(cm, dpi) {
       return cm * (dpi / 2.54);

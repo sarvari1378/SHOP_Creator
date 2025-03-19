@@ -29,10 +29,16 @@ jobs:
         JSON_FILE="${{ github.event.inputs.json_file }}"
         TITLE_OR_CODE="${{ github.event.inputs.title_or_code }}"
 
+        # Ensure that the json_file input is not empty
+        if [ -z "$JSON_FILE" ]; then
+          echo "Error: JSON file name is required."
+          exit 1
+        fi
+
         # Define the path to the JSON file
         JSON_PATH="Data Folder/${JSON_FILE}.json"
 
-        # Check if the file exists
+        # Check if the JSON file exists
         if [ ! -f "$JSON_PATH" ]; then
           echo "Error: File $JSON_PATH not found!"
           exit 1
@@ -46,8 +52,18 @@ jobs:
 
     - name: Commit changes
       run: |
+        # Get the file path
+        JSON_FILE_PATH="Data Folder/${{ github.event.inputs.json_file }}.json"
+
+        # Check if the file exists before attempting to commit
+        if [ ! -f "$JSON_FILE_PATH" ]; then
+          echo "Error: $JSON_FILE_PATH not found after modification."
+          exit 1
+        fi
+
+        # Commit the changes
         git config --global user.name "github-actions"
         git config --global user.email "github-actions@github.com"
-        git add "Data Folder/${JSON_FILE}.json"
+        git add "$JSON_FILE_PATH"
         git commit -m "Removed item with title or code: $TITLE_OR_CODE from ${JSON_FILE}.json"
         git push

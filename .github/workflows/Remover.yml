@@ -1,0 +1,53 @@
+name: Remove Item from JSON
+
+on:
+  workflow_dispatch:
+    inputs:
+      json_file:
+        description: 'JSON file name (e.g., Jarah, Abbasi)'
+        required: true
+        type: string
+      title_or_code:
+        description: 'Title or code of the item to remove'
+        required: true
+        type: string
+
+jobs:
+  remove_item:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install jq
+      run: sudo apt-get install jq
+
+    - name: Remove item from JSON
+      run: |
+        # Get the input values
+        JSON_FILE="${{ github.event.inputs.json_file }}"
+        TITLE_OR_CODE="${{ github.event.inputs.title_or_code }}"
+
+        # Define the path to the JSON file
+        JSON_PATH="Data Folder/${JSON_FILE}.json"
+
+        # Check if the file exists
+        if [ ! -f "$JSON_PATH" ]; then
+          echo "Error: File $JSON_PATH not found!"
+          exit 1
+        fi
+
+        # Remove the item by title or code from the specified JSON file
+        jq "del(.items[] | select(.title == \"$TITLE_OR_CODE\" or .code == \"$TITLE_OR_CODE\"))" "$JSON_PATH" > "${JSON_PATH%.json}_updated.json"
+
+        # Replace the original file with the updated one
+        mv "${JSON_PATH%.json}_updated.json" "$JSON_PATH"
+
+    - name: Commit changes
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add "Data Folder/${JSON_FILE}.json"
+        git commit -m "Removed item with title or code: $TITLE_OR_CODE from ${JSON_FILE}.json"
+        git push

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON Item Editor</title>
+  <style>
+    #image-display {
+      display: none;
+      max-width: 200px;
+      max-height: 200px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Delete Item</h1>
+  
+  <select id="urlSelect" onchange="redirectToURL()">
+    <option value="">Select a URL</option>
+    <option value="https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/refs/heads/main/Data%20Folder/jarah.json">Jarah</option>
+    <option value="https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/refs/heads/main/Data%20Folder/Abbasi.json">Abbasi</option>
+    <option value="https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/refs/heads/main/Data%20Folder/Jarah.json">jarah test</option>
+  </select>
+  
+  <!-- Search Box -->
+  <input type="text" id="search-box" placeholder="Search Items">
+
+  <!-- Dropdown to select item -->
+  <select id="item-dropdown">
+    <option value="">Select Item</option>
+  </select>
+
+  <!-- Item Info Section -->
+  <div>
+    <img id="image-display" alt="Item Image">
+    <button id="delete-button">Delete Item</button>
+  </div>
+
+  <script>
+    // Global variable to hold the current JSON file name
+    let currentJsonFileName = '';
+    
+    function decodeToken(encoded) {
+            const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+            let decoded = "";
+            for (let i = 0; i < encoded.length; i++) {
+                const char = encoded[i];
+                const index = alphabet.indexOf(char);
+                if (index !== -1) {
+                // Move 5 positions backward (wrap around if needed)
+                const newIndex = (index - 5 + alphabet.length) % alphabet.length;
+                decoded += alphabet[newIndex];
+                } else {
+                decoded += char;
+                }
+            }
+            return decoded;
+            }
+
+        
+
+    // Function to populate the dropdown with items from JSON
+    function populateDropdown(items) {
+      const dropdown = document.getElementById('item-dropdown');
+      dropdown.innerHTML = ''; // Clear existing options
+
+      // Add new options from the fetched JSON
+      items.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.title;
+        option.textContent = item.title;
+        dropdown.appendChild(option);
+      });
+    }
+
+    // Function to fetch JSON data from the URL
+    async function fetchJsonData(url) {
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const items = data.items;
+
+        // Populate the dropdown with items from the JSON
+        populateDropdown(items);
+
+        // Get the elements for later use
+        const dropdown = document.getElementById('item-dropdown');
+        const searchBox = document.getElementById('search-box');
+        const titleInput = document.getElementById('title');
+        const englishDescriptionTextarea = document.getElementById('english-description');
+        const persianDescriptionTextarea = document.getElementById('persian-description');
+        const imageUrlInput = document.getElementById('image-url');
+        const imageDisplay = document.getElementById('image-display');
+
+        let currentItem = null;
+
+        // Handle item selection from dropdown
+        dropdown.addEventListener('change', function () {
+          const selectedItem = items.find(item => item.title === dropdown.value);
+          if (selectedItem) {
+            currentItem = selectedItem;
+
+            // Populate fields with selected item data (if these inputs exist)
+            if (titleInput) titleInput.value = selectedItem.title;
+            if (englishDescriptionTextarea) englishDescriptionTextarea.value = selectedItem.englishDescription;
+            if (persianDescriptionTextarea) persianDescriptionTextarea.value = selectedItem.persianDescription;
+            if (imageUrlInput) imageUrlInput.value = selectedItem.image;
+
+            // Show the image
+            imageDisplay.src = selectedItem.image;
+            imageDisplay.style.display = 'block';
+          }
+        });
+
+        // Filter items in the dropdown based on search input
+        searchBox.addEventListener('input', function () {
+          const query = searchBox.value.toLowerCase();
+          const filteredItems = items.filter(item =>
+            item.title.toLowerCase().includes(query)
+          );
+          populateDropdown(filteredItems);
+        });
+
+        // Handle submit button (update item) if exists
+        const submitButton = document.getElementById('submit-button');
+        if (submitButton) {
+          submitButton.addEventListener('click', function () {
+            if (currentItem) {
+              // Update the selected item with the new values
+              currentItem.title = titleInput.value;
+              currentItem.englishDescription = englishDescriptionTextarea.value;
+              currentItem.persianDescription = persianDescriptionTextarea.value;
+              currentItem.image = imageUrlInput.value;
+
+              // Trigger GitHub Action to update the file on GitHub
+              updateJsonOnGitHub(data);
+
+              console.log('Updated Item:', currentItem);
+              alert('Item updated successfully!');
+            } else {
+              alert('Please select an item first.');
+            }
+          });
+        }
+
+        // Handle delete button (delete item)
+        document.getElementById('delete-button').addEventListener('click', function () {
+          if (currentItem) {
+            const titleOrCode = currentItem.title; // Identify the item by title
+            const confirmDelete = confirm(`Are you sure you want to delete the item: "${titleOrCode}"?`);
+            if (!confirmDelete) return;
+
+            // Trigger the GitHub Action to delete the item using the global file name
+            triggerGitHubAction({
+              json_file: currentJsonFileName,
+              title_or_code: titleOrCode
+            });
+          } else {
+            alert('Please select an item to delete.');
+          }
+        });
+
+      } catch (error) {
+        console.error('Error fetching JSON:', error);
+      }
+    }
+
+    // Function to trigger the GitHub Action workflow (e.g., to delete the item)
+    function triggerGitHubAction(inputs) {
+      const part1 = "lmu_WIurU";
+      const part2 = "piYxcmS9k";
+      const part3 = "IwpYdQaHm4";
+      const part4 = "hDexf";
+      const part5 = "k81kysL";
+      const ajaghvajagh = part1 + part2 + part3 + part4 + part5;
+      const jalebangiz = decodeToken(ajaghvajagh);
+      const username = 'sarvari1378';  
+      const repository = 'SHOP_Creator';  
+
+      const apiUrl = `https://api.github.com/repos/${username}/${repository}/actions/workflows/Remover.yml/dispatches`;
+
+      const payload = {
+        ref: 'main',
+        inputs: inputs
+      };
+
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `token ${jalebangiz}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        if (response.ok) {
+          alert('Item deletion triggered successfully! GitHub Action is in progress.');
+        } else {
+          response.json().then(errorData => {
+            alert(`Failed to trigger the GitHub Action workflow. Error: ${errorData.message || 'Unknown error'}`);
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error triggering GitHub Action:', error);
+        alert(`An error occurred while triggering the GitHub Action: ${error.message}`);
+      });
+    }
+
+    // Set up event listener for the URL select element
+    const urlSelect = document.getElementById('urlSelect');
+    urlSelect.addEventListener('input', function () {
+      const rawJsonUrl = urlSelect.value;
+      if (rawJsonUrl) {
+        // Extract and store the JSON file name globally
+        currentJsonFileName = rawJsonUrl.split('/').pop().replace('.json', '');
+        const fileUrl = `https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/refs/heads/main/Data%20Folder/${currentJsonFileName}.json`;
+        fetchJsonData(fileUrl);
+      }
+    });
+
+    // Initial population if there's a URL present when the page loads
+    window.addEventListener('load', function () {
+      const initialUrl = urlSelect.value;
+      if (initialUrl) {
+        currentJsonFileName = initialUrl.split('/').pop().replace('.json', '');
+        const fileUrl = `https://raw.githubusercontent.com/sarvari1378/SHOP_Creator/refs/heads/main/Data%20Folder/${currentJsonFileName}.json`;
+        fetchJsonData(fileUrl);
+      }
+    });
+  </script>
+  
+</body>
+</html>

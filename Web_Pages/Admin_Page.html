@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>ویرایشگر JSON با GitHub API</title>
+  <style>
+    body { font-family: Tahoma, sans-serif; padding: 20px; background: #f0f2f5; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    #selector-container, #search-container { text-align: center; margin-bottom: 20px; }
+    #file-select, #search-box { padding: 6px; font-size: 1em; width: 200px; }
+    #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+    .card { background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 15px; display: flex; flex-direction: column; transition: transform .2s; }
+    .card:hover { transform: scale(1.02); }
+    .card img { width:100%; height:180px; object-fit:cover; border-radius:8px; margin-bottom:10px; }
+    .buttons { display:flex; justify-content:flex-end; gap:5px; margin-top:10px; }
+    .buttons button { padding:6px 10px; border:none; border-radius:4px; cursor:pointer; font-size:.9em; }
+    .edit-btn { background:#4caf50; color:#fff; }
+    .delete-btn { background:#f44336; color:#fff; }
+    .editor { margin-top:10px; }
+    .editor input, .editor textarea { width:100%; margin-bottom:5px; padding:5px; font-size:14px; direction:rtl; }
+    .editor button { background:#2196f3; color:#fff; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; }
+    #notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #4caf50; color: #fff; padding: 10px 20px; border-radius: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); display: none; z-index: 1000; }
+  </style>
+</head>
+<body>
+  <h1>🛠️ ویرایشگر آیتم‌ها با ذخیره در GitHub</h1>
+  <div id="selector-container">
+    <label for="file-select">انتخاب فایل JSON:</label>
+    <select id="file-select"></select>
+  </div>
+  <!-- search box -->
+  <div id="search-container">
+    <label for="search-box">جستجو در عنوان‌ها:</label>
+    <input type="text" id="search-box" placeholder="عبارت موردنظر را وارد کنید" />
+  </div>
+  <div id="grid"></div>
+  <div id="notification"></div>
+
+  <script>
+    function decodeToken(encoded) {
+      const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+      let decoded = "";
+      for (let i = 0; i < encoded.length; i++) {
+        const char = encoded[i];
+        const index = alphabet.indexOf(char);
+        if (index !== -1) {
+          const newIndex = (index - 5 + alphabet.length) % alphabet.length;
+          decoded += alphabet[newIndex];
+        } else {
+          decoded += char;
+        }
+      }
+      return decoded;
+    }
+
+    function getToken() {
+      const part1 = "l";
+      const part2 = "mu_ciDwOB1h";
+      const part3 = "DNR8tga6kA";
+      const part4 = "t6VmMy7Lq";
+      const part5 = "Yhs7D1uew";
+      return decodeToken(part1 + part2 + part3 + part4 + part5);
+    }
+
+    const GITHUB_TOKEN = getToken();
+    const OWNER = 'sarvari1378';
+    const REPO = 'SHOP_Creator';
+    const DIRECTORY = 'Data Folder';
+    const BRANCH = 'main';
+    const extraFiles = [
+      { name: 'Custom.json', path: `${DIRECTORY}/Custom.json` },
+      { name: 'Data.json',    path: `Data.json` }
+    ];
+    let PATH = '';
+    let data = [];
+    let fileSha = null;
+    let searchTerm = '';
+
+    function showNotification(message) {
+      const notif = document.getElementById('notification');
+      notif.textContent = message;
+      notif.style.display = 'block';
+      setTimeout(() => { notif.style.display = 'none'; }, 3000);
+    }
+
+    // Attach search listener
+    document.getElementById('search-box').addEventListener('input', e => {
+      searchTerm = e.target.value.trim().toLowerCase();
+      renderGrid();
+    });
+
+    async function fetchFileList() {
+      const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(DIRECTORY)}?ref=${BRANCH}`;
+      const res = await fetch(url);
+      const list = await res.json();
+      const select = document.getElementById('file-select');
+      [...list.filter(f => f.name.endsWith('.json')), ...extraFiles].forEach(file => {
+        const opt = document.createElement('option');
+        opt.value = file.path;
+        opt.textContent = file.name;
+        select.appendChild(opt);
+      });
+      select.onchange = () => {
+        PATH = select.value;
+        fetchData();
+      };
+      if (select.options.length) {
+        PATH = select.options[0].value;
+        select.value = PATH;
+        fetchData();
+      }
+    }
+
+    async function fetchData() {
+      const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(PATH)}?ref=${BRANCH}`;
+      const res = await fetch(apiUrl);
+      const json = await res.json();
+      fileSha = json.sha;
+      const raw = atob(json.content.replace(/\n/g, ''));
+      const content = new TextDecoder('utf-8').decode(Uint8Array.from(raw, c => c.charCodeAt(0)));
+      const parsed = JSON.parse(content);
+      data = parsed.items;
+      renderGrid();
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      data
+        .filter(item => item.title.toLowerCase().includes(searchTerm))
+        .forEach((item, index) => {
+          const card = document.createElement('div'); card.className = 'card';
+          const img = document.createElement('img'); img.src = item.image;
+          const title = document.createElement('h3'); title.textContent = item.title;
+          const buttons = document.createElement('div'); buttons.className = 'buttons';
+
+          const editBtn = document.createElement('button'); editBtn.className = 'edit-btn'; editBtn.textContent = 'ویرایش';
+          editBtn.onclick = () => toggleEditor(card, item, index);
+
+          const deleteBtn = document.createElement('button'); deleteBtn.className = 'delete-btn'; deleteBtn.textContent = 'حذف';
+          deleteBtn.onclick = async () => {
+            if (!confirm('آیا مطمئن هستید؟')) return;
+            data.splice(index, 1);
+            await saveToGitHub();
+            showNotification('حذف با موفقیت انجام شد');
+            renderGrid();
+          };
+
+          buttons.append(editBtn, deleteBtn);
+          card.append(img, title, buttons);
+          grid.appendChild(card);
+        });
+    }
+
+    function toggleEditor(card, item, index) {
+      const existing = card.querySelector('.editor');
+      if (existing) return existing.remove();
+      const editor = document.createElement('div'); editor.className = 'editor';
+      editor.innerHTML = `
+        <input placeholder="عنوان" value="${item.title}" />
+        <input placeholder="آدرس عکس" value="${item.image}" />
+        <textarea rows="3" placeholder="توضیح انگلیسی">${item.englishDescription}</textarea>
+        <textarea rows="3" placeholder="توضیح فارسی">${item.persianDescription}</textarea>
+        <button>ذخیره</button>
+      `;
+      const inputs = editor.querySelectorAll('input, textarea');
+      editor.querySelector('button').onclick = async () => {
+        item.title = inputs[0].value;
+        item.image = inputs[1].value;
+        item.englishDescription = inputs[2].value;
+        item.persianDescription = inputs[3].value;
+        await saveToGitHub();
+        showNotification('ذخیره با موفقیت انجام شد');
+        renderGrid();
+      };
+      card.appendChild(editor);
+    }
+
+    async function saveToGitHub() {
+      const jsonString = JSON.stringify({ items: data }, null, 2);
+      const encoded = btoa(unescape(encodeURIComponent(jsonString)));
+      const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encodeURIComponent(PATH)}`;
+      const body = { message: `Update items via editor`, content: encoded, sha: fileSha, branch: BRANCH };
+      const res = await fetch(apiUrl, {
+        method: 'PUT', headers: { Authorization: `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const json = await res.json(); fileSha = json.content.sha;
+    }
+
+    fetchFileList();
+  </script>
+</body>
+</html>

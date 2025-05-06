@@ -274,8 +274,8 @@
         if (codeValue) {
           const codeNum = parseInt(codeValue, 10);
           if (!isNaN(codeNum)) {
-            const itemNumber = codeNum - 1000;
-            const qrURL = "https://sadafjewellery.org/item_" + itemNumber;
+            const itemNumber = codeNum;
+            const qrURL = "https://sadafjewellery.org/" + itemNumber;
             const qrInput = document.getElementById("ringImageInput");
             qrInput.value = qrURL;
             const changeEvent = new Event("change");

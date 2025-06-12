@@ -289,10 +289,10 @@
   const codeNum = parseInt(codeValue, 10);
   if (!isNaN(codeNum)) {
     // Calculate the item number (adjust as needed)
-    const itemNumber = codeNum - 2000;
+    const itemNumber = codeNum;
     
     // Construct the QR code URL
-    const qrURL = "https://abba30r.abba30r.workers.dev/item_" + itemNumber;
+    const qrURL = "https://abba30r.abba30r.workers.dev/" + itemNumber;
     const qrInput = document.getElementById("ringImageInput");
     qrInput.value = qrURL;
     

@@ -1,0 +1,102 @@
+@font-face {
+  font-family: 'EnglishFont';
+  src: url('https://sarvari1378.github.io/Files/Fonts/MyriadProRegular.ttf');
+}
+
+@font-face {
+  font-family: 'ArabicFont';
+  src: url('https://github.com/sarvari1378/Files/raw/refs/heads/main/Fonts/MyriadArabicRegular.ttf');
+}
+
+@font-face {
+  font-family: 'CodeFont';
+  src: url('https://github.com/sarvari1378/Files/raw/refs/heads/main/Fonts/BookAntiqua.ttf');
+}
+
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f4f4f4;
+  margin: 0;
+  padding: 20px;
+}
+.preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 20px;
+  width: 100%;
+  height: calc(50vh - 20px);
+  padding: 10px;
+  box-sizing: border-box;
+}
+.container {
+  margin-top: 700px; /* This value is quite large, might be intentional for your layout */
+  text-align: center;
+}
+input, button, textarea {
+  margin: 10px 0;
+}
+input, textarea {
+  padding: 10px;
+  width: 90%;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+canvas {
+  margin-top: 20px;
+  border: 1px solid #ccc;
+  max-width: 50%;
+}
+#downloadBtn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+}
+#downloadBtn:hover {
+  background-color: white;
+  color: #4CAF50;
+  border: 2px solid #4CAF50;
+}
+/* Loading overlay styles */
+#loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 1000;
+}
+.spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #3498db;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 2s linear infinite;
+  margin-bottom: 10px;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

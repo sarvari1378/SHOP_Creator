@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.4/piexif.min.js"></script>
+  <title>Abbasi Submit Form</title>
+  <style>
+    
+    @font-face {
+      font-family: 'EnglishFont';
+      src: url('https://sarvari1378.github.io/Files/Fonts/MyriadProRegular.ttf');
+    }
+
+    @font-face {
+      font-family: 'ArabicFont';
+      src: url('https://github.com/sarvari1378/Files/raw/refs/heads/main/Fonts/MyriadArabicRegular.ttf');
+    }
+
+    @font-face {
+      font-family: 'CodeFont';
+      src: url('https://github.com/sarvari1378/Files/raw/refs/heads/main/Fonts/BookAntiqua.ttf');
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .preview-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 20px;
+      width: 100%;
+      height: calc(50vh - 20px);
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .container {
+      margin-top: 700px;
+      text-align: center;
+    }
+    input, button, textarea {
+      margin: 10px 0;
+    }
+    input, textarea {
+      padding: 10px;
+      width: 90%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    canvas {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      max-width: 50%;
+    }
+    #downloadBtn {
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    #downloadBtn:hover {
+      background-color: white;
+      color: #4CAF50;
+      border: 2px solid #4CAF50;
+    }
+    /* Loading overlay styles */
+    #loadingOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #3498db;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 2s linear infinite;
+      margin-bottom: 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loading overlay element -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+    <p style="color:#fff; font-size:20px;">Processing...</p>
+  </div>
+
+  <div class="preview-container">
+    <canvas id="canvas"></canvas>
+    <div>
+      <button id="downloadBtn" onclick="submitForm(event)">دانلود و ارسال به سایت</button>
+      <button id="downloadBtn" onclick="downloadImage(event)">دانلود فقط طرح</button>
+    </div>
+    
+  </div>
+  <div class="container">
+    <h2>عکس کیو آر کد</h2>
+    <!-- This input will be automatically filled based on the code input (change) -->
+    <input
+      type="text"
+      id="ringImageInput"
+      placeholder="QR Code URL will appear automatically"
+      data-x="1820"
+      data-y="950"
+      data-width="550"
+      data-height="550"
+      data-mode="darken"
+    />
+
+    <h2>عکس انگشتر</h2>
+    <input
+      type="file"
+      id="circleImageInput"
+      accept="image/*"
+      data-x="250"
+      data-y="163"
+      data-width="710"
+      data-height="710"
+      data-Roundness="75"
+    />
+
+    <h2>بزرگنمایی عکس انگشتر</h2>
+    <input type="range" id="slider" min="0" max="5" step="0.01" value="1">
+
+    <h2>حرکت در راست و چپ</h2>
+    <input type="range" id="sliderx" min="-700" max="700" step="0.01" value="0.5">
+
+    <h2>حرکت در بالا و پایین</h2>
+    <input type="range" id="slidery" min="-700" max="700" step="0.01" value="0.5">
+    <br />
+
+    
+    
+    <input type="text" id="number1" placeholder="Pedal Name" data-align="left" data-x="330" data-y="1037" data-font="EnglishFont" data-x2="500" data-y2="475" value = "Pedal Name: ">
+    <input type="text" id="number2" placeholder="Build Type" data-align="left" data-x="330" data-y="1115" data-font="EnglishFont" data-x2="516" data-y2="506" value = "Build Type: Hand made">
+    <input type="text" id="number3" placeholder="Percentage of silver" data-align="left" data-x="330" data-y="1190" data-font="EnglishFont" data-x2="606" data-y2="535" value = "Percentage of silver: 925">
+    <input type="text" id="number4" placeholder="Type of stone" data-align="left" data-x="330" data-y="1265" data-font="EnglishFont" data-x2="548" data-y2="565" value = "Type of stone:">
+    <input type="text" id="number5" placeholder="Number of Diamond" data-align="left" data-x="330" data-y="1340" data-font="EnglishFont" data-x2="548" data-y2="565" value = "Number of Diamond:">
+    <input type="text" id="number6" placeholder="Weight" data-align="left" data-x="330" data-y="1415" data-font="EnglishFont" data-x2="490" data-y2="594" value = "Weight:">
+    
+    <input type="text" id="number8" placeholder="اسم دواسه" data-align="right" data-x="1700" data-y="1035" data-font="ArabicFont" data-x2="873" data-y2="472" dir = "rtl" value = "اسم دواسه:" >
+    <input type="text" id="number9" placeholder="نوع صیاغه" data-align="right" data-x="1700" data-y="1110" data-font="ArabicFont" data-x2="873" data-y2="501" dir = "rtl" value = "نوع صیاغه: یدوی عباسی R">
+    <input type="text" id="number10" placeholder="عیار الفضه" data-align="right" data-x="1700" data-y="1185" data-font="ArabicFont" data-x2="875" data-y2="530" dir = "rtl"value = "عیار الفضه: 925">
+    <input type="text" id="number11" placeholder="خاتم التوقیع" data-align="right" data-x="1700" data-y="1260" data-font="ArabicFont" data-x2="875" data-y2="562" dir = "rtl" value = "خاتم التوقیع:">
+    <input type="text" id="number12" placeholder="عدد الماس" data-align="right" data-x="1700" data-y="1340" data-font="ArabicFont" data-x2="875" data-y2="568" dir = "rtl" value = "عدد الماس:">
+    <input type="text" id="number19" placeholder="الوزن" data-align="right" data-x="1700" data-y="1415" data-font="ArabicFont" data-x2="917" data-y2="591" dir = "rtl" value = "الوزن:">
+    
+    
+    
+    <br>
+
+    <!-- Code input -->
+    <input
+      type="text"
+      id="number13"
+      placeholder="Code"
+      data-align="center"
+      data-x="1030"
+      data-y="940"
+      data-font="EnglishFont"
+      data-fontsize = "110"
+      data-color="#231f20"
+      value = "A.R"
+      
+    />
+    <br>
+
+    <!-- New Textareas for aggregated descriptions -->
+    <h2>English Description</h2>
+    <textarea id="englishTextArea" rows="6" cols="50" readonly></textarea>
+    <h2>Persian Description</h2>
+    <textarea id="arabicTextArea" rows="6" cols="50" readonly></textarea>
+  </div>
+
+  <script>
+    // Token encoding/decoding functions
+    function encodeToken(token) {
+      const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+      let encoded = "";
+      for (let i = 0; i < token.length; i++) {
+        const char = token[i];
+        const index = alphabet.indexOf(char);
+        if (index !== -1) {
+          const newIndex = (index + 5) % alphabet.length;
+          encoded += alphabet[newIndex];
+        } else {
+          encoded += char;
+        }
+      }
+      return encoded;
+    }
+    
+    function decodeToken(encoded) {
+      const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+      let decoded = "";
+      for (let i = 0; i < encoded.length; i++) {
+        const char = encoded[i];
+        const index = alphabet.indexOf(char);
+        if (index !== -1) {
+          const newIndex = (index - 5 + alphabet.length) % alphabet.length;
+          decoded += alphabet[newIndex];
+        } else {
+          decoded += char;
+        }
+      }
+      return decoded;
+    }
+    
+    // Helper function to get the GitHub token.
+    function getToken() {
+      const part1 = "Gjfwjw l";
+      const part2 = "mu_ciDwOB1h";
+      const part3 = "DNR8tga6kA";
+      const part4 = "t6VmMy7Lq";
+      const part5 = "Yhs7D1uew";
+      const ajaghvajagh = part1 + part2 + part3 + part4 + part5;
+      return decodeToken(ajaghvajagh);
+    }
+    
+    document.addEventListener("DOMContentLoaded", function () {
+      // Base image for the canvas
+      const baseImage = new Image();
+      baseImage.crossOrigin = "anonymous";
+      // template (change)
+      baseImage.src = 'https://sarvari1378.github.io/SHOP_Creator/Templates/Abbasi2_template.png';
+
+      // Image objects for overlays
+      let ringImg = new Image();
+      ringImg.crossOrigin = "anonymous";
+      let circleImg = new Image();
+      circleImg.crossOrigin = "anonymous";
+
+      // Attach event listeners to inputs
+      document.getElementById("ringImageInput").addEventListener("change", function (event) {
+        loadImage(event, ringImg);
+      });
+      document.getElementById("circleImageInput").addEventListener("change", function (event) {
+        loadImage(event, circleImg);
+      });
+
+      document.getElementById('slider').addEventListener('input', generateImage);
+      document.getElementById('sliderx').addEventListener('input', generateImage);
+      document.getElementById('slidery').addEventListener('input', generateImage);
+
+      // When code input changes, update the QR code URL.
+      document.getElementById("number13").addEventListener("input", function () {
+  // Use the extractCode function to get the numeric part of the input
+  let codeValue = extractCode(this.value);
+  
+  // If no digits are found, clear the QR input and exit
+  if (!codeValue) {
+    document.getElementById("ringImageInput").value = "";
+    return;
+  }
+  
+  const codeNum = parseInt(codeValue, 10);
+  if (!isNaN(codeNum)) {
+    // Calculate the item number (adjust as needed)
+    const itemNumber = codeNum;
+    
+    // Construct the QR code URL
+    const qrURL = "https://abba30r.abba30r.workers.dev/" + itemNumber;
+    const qrInput = document.getElementById("ringImageInput");
+    qrInput.value = qrURL;
+    
+    // Dispatch a change event to update the QR image
+    const changeEvent = new Event("change");
+    qrInput.dispatchEvent(changeEvent);
+  }
+});
+
+
+      // Update text areas on input change (for descriptions)
+      document.querySelectorAll("input[type='text']:not(#ringImageInput), textarea")
+        .forEach(function (input) {
+          input.addEventListener("input", function() {
+            generateImage();
+            updateTextAreas();
+          });
+      });
+
+      // Function to load an image (from file or URL)
+      function loadImage(event, imgElement) {
+        const input = event.target;
+        if (input.files && input.files[0]) {
+          const file = input.files[0];
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            imgElement.src = e.target.result;
+            if (input.id === "circleImageInput") {
+              window.uploadedRingImage = e.target.result;
+            }
+          };
+          reader.readAsDataURL(file);
+        } else if (input.value) {
+          const url = input.value;
+          const width = input.dataset.width || 400;
+          const height = input.dataset.height || 400;
+          imgElement.src =
+            "https://quickchart.io/qr?text=" +
+            encodeURIComponent(url) +
+            "&size=" + width + "x" + height;
+        }
+      }
+
+      // Redraw canvas when images load
+      baseImage.onload = generateImage;
+      ringImg.onload = generateImage;
+      circleImg.onload = generateImage;
+
+      // Function to generate the canvas image
+      function generateImage() {
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = baseImage.width;
+        canvas.height = baseImage.height;
+        ctx.drawImage(baseImage, 0, 0);
+        drawImageWithMode(ctx, ringImg, document.getElementById("ringImageInput"));
+        drawCircleImage(ctx, circleImg, document.getElementById("circleImageInput"));
+        document.querySelectorAll("input[type='text']:not(#ringImageInput), textarea")
+          .forEach(function (input) {
+            if(input.id === "englishTextArea" || input.id === "arabicTextArea") return;
+            const text = input.value;
+            const alignOptions = ["left", "right", "center"];
+            const align = alignOptions.includes(input.dataset.align)
+              ? input.dataset.align
+              : "left";
+            const x = parseInt(input.dataset.x, 10) || 50;
+            const y = parseInt(input.dataset.y, 10) || 50;
+            const font = input.dataset.font || "EnglishFont";
+            const color = input.dataset.color || "#ffffff";
+            const fontSize = input.dataset.fontsize || "50";
+            ctx.font = fontSize + "px " + font;
+            ctx.fillStyle = color;
+            ctx.textAlign = align;
+            ctx.direction = align === "right" ? "rtl" : "ltr";
+            const lines = text.split("\n");
+            lines.forEach(function (line, index) {
+              const lineHeight = parseInt(fontSize, 10) + 5;
+              ctx.fillText(line, x, y + index * lineHeight);
+            });
+        });
+      }
+
+      // Function to draw an image with composite operation (for QR code)
+      function drawImageWithMode(ctx, imgElement, inputElement) {
+        if (imgElement.src) {
+          const x = parseInt(inputElement.dataset.x, 10) || 100;
+          const y = parseInt(inputElement.dataset.y, 10) || 100;
+          const width = parseInt(inputElement.dataset.width, 10) || 100;
+          const height = parseInt(inputElement.dataset.height, 10) || 100;
+          ctx.globalCompositeOperation = inputElement.dataset.mode || "normal";
+          ctx.drawImage(imgElement, x, y, width, height);
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+
+      // Function to draw the circle (ring) image with clipping
+      function drawCircleImage(ctx, imgElement, inputElement) {
+      const slider = document.getElementById('slider');
+      const sliderValue = parseFloat(slider.value);
+      const scalePercent = sliderValue * 100;
+      const rectWidth = 460;
+      const rectHeight = 130;
+      const rectColor = "rgba(214, 167, 106, 1)";
+      const rectPosition = { x: 800, y: 845 };
+      const roundness = 64;
+
+      if (imgElement.src) {
+        const x = parseInt(inputElement.dataset.x, 10) || 250;
+        const y = parseInt(inputElement.dataset.y, 10) || 250;
+        const size = parseInt(inputElement.dataset.width, 10) || 100;
+
+        const centerX = x + size / 2;
+        const centerY = y + size / 2;
+        const radius = size / 2;
+
+        const newImgWidth = imgElement.width * (scalePercent / 100);
+        const newImgHeight = imgElement.height * (scalePercent / 100);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        const sliderx = document.getElementById('sliderx');
+        const sliderxValue = parseFloat(sliderx.value);
+        const slidery = document.getElementById('slidery');
+        const slideryValue = parseFloat(slidery.value);
+
+        const imgX = centerX - newImgWidth / 2 + sliderxValue;
+        const imgY = centerY - newImgHeight / 2 + slideryValue;
+
+        ctx.drawImage(imgElement, imgX, imgY, newImgWidth, newImgHeight);
+
+        ctx.beginPath();
+        ctx.moveTo(rectPosition.x + roundness, rectPosition.y);
+        ctx.arcTo(rectPosition.x + rectWidth, rectPosition.y, rectPosition.x + rectWidth, rectPosition.y + rectHeight, roundness);
+        ctx.arcTo(rectPosition.x + rectWidth, rectPosition.y + rectHeight, rectPosition.x, rectPosition.y + rectHeight, roundness);
+        ctx.arcTo(rectPosition.x, rectPosition.y + rectHeight, rectPosition.x, rectPosition.y, roundness);
+        ctx.arcTo(rectPosition.x, rectPosition.y, rectPosition.x + rectWidth, rectPosition.y, roundness);
+        ctx.closePath();
+        ctx.restore();
+        ctx.fillStyle = rectColor;
+        ctx.fill();
+      }
+    }
+
+      // Update description textareas from individual inputs
+      function updateTextAreas() {
+        const englishInputs = ["number1", "number2", "number3", "number4", "number5", "number6"];
+        const arabicInputs = ["number8", "number9", "number10", "number11", "number12", "number19"];
+        let englishText = "";
+        englishInputs.forEach(id => {
+          const input = document.getElementById(id);
+          if(input && input.value) {
+            englishText += input.value + "\n";
+          }
+        });
+        let arabicText = "";
+        arabicInputs.forEach(id => {
+          const input = document.getElementById(id);
+          if(input && input.value) {
+            arabicText += input.value + "\n";
+          }
+        });
+        document.getElementById("englishTextArea").value = englishText.trim();
+        document.getElementById("arabicTextArea").value = arabicText.trim();
+      }
+
+      // Initially update the text areas.
+      updateTextAreas();
+
+          // Function to download the final canvas image with DPI metadata
+      function downloadImage() {
+  // Hardcoded width, height (in cm), and DPI
+  const widthCm = 8.5;  // Example: 10 cm width
+  const heightCm = 5.6; // Example: 15 cm height
+  const dpi = 300;     // Example: 300 DPI
+
+  // Convert CM to Pixels
+  const widthPx = Math.round(widthCm * (dpi / 2.54));
+  const heightPx = Math.round(heightCm * (dpi / 2.54));
+
+  // Create a new temporary canvas with new size
+  const canvas = document.getElementById('canvas');
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = widthPx;
+  tempCanvas.height = heightPx;
+  const ctx = tempCanvas.getContext('2d');
+
+  // Draw the original canvas content into new size
+  ctx.drawImage(canvas, 0, 0, widthPx, heightPx);
+
+  // Convert the canvas to PNG Base64
+  const pngDataUrl = tempCanvas.toDataURL('image/png');
+  let binary = atob(pngDataUrl.split(',')[1]);
+  let array = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    array[i] = binary.charCodeAt(i);
+  }
+
+  // Convert DPI to pixels per meter
+  const pixelsPerMeter = Math.round(dpi / 0.0254);
+  const pHYsData = new Uint8Array(9);
+  for (let i = 0; i < 4; i++) {
+    pHYsData[i] = (pixelsPerMeter >>> ((3 - i) * 8)) & 0xFF;
+    pHYsData[i + 4] = (pixelsPerMeter >>> ((3 - i) * 8)) & 0xFF;
+  }
+  pHYsData[8] = 1; // Unit: meters
+
+  // Create pHYs Chunk
+  const chunkType = new Uint8Array([0x70, 0x48, 0x59, 0x73]); // "pHYs"
+  const lengthBytes = new Uint8Array([0, 0, 0, 9]); // 9-byte chunk
+
+  const crcData = new Uint8Array(chunkType.length + pHYsData.length);
+  crcData.set(chunkType, 0);
+  crcData.set(pHYsData, chunkType.length);
+  const crc = crc32(crcData);
+  const crcBytes = new Uint8Array([
+    (crc >>> 24) & 0xFF,
+    (crc >>> 16) & 0xFF,
+    (crc >>> 8) & 0xFF,
+    (crc) & 0xFF
+  ]);
+
+  const pHYsChunk = new Uint8Array(4 + 4 + 9 + 4);
+  pHYsChunk.set(lengthBytes, 0);
+  pHYsChunk.set(chunkType, 4);
+  pHYsChunk.set(pHYsData, 8);
+  pHYsChunk.set(crcBytes, 17);
+
+  // Insert pHYs Chunk into PNG Data
+  const signatureLength = 8;
+  const ihdrLength = 25;
+  const insertPos = signatureLength + ihdrLength;
+
+  const newLength = array.length + pHYsChunk.length;
+  let newPng = new Uint8Array(newLength);
+  newPng.set(array.slice(0, insertPos), 0);
+  newPng.set(pHYsChunk, insertPos);
+  newPng.set(array.slice(insertPos), insertPos + pHYsChunk.length);
+
+  // Convert back to Base64 for download
+  const newBase64 = uint8ToBase64(newPng);
+  const newDataUrl = "data:image/png;base64," + newBase64;
+
+  // Set filename
+  const codeInput = document.getElementById('number13').value.trim();
+  const fileName = codeInput ? codeInput + ".png" : "image_with_300dpi.png";
+  
+  // Create download link and trigger download
+  const link = document.createElement('a');
+  link.href = newDataUrl;
+  link.download = fileName;
+  link.click();
+}
+
+
+
+    function crc32(buf) {
+      let table = crc32.table;
+      if (!table) {
+        table = crc32.table = [];
+        for (let i = 0; i < 256; i++) {
+          let c = i;
+          for (let k = 0; k < 8; k++) {
+            c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+          }
+          table[i] = c;
+        }
+      }
+      let crc = 0 ^ (-1);
+      for (let i = 0; i < buf.length; i++) {
+        crc = (crc >>> 8) ^ table[(crc ^ buf[i]) & 0xFF];
+      }
+      return (crc ^ (-1)) >>> 0;
+    }
+    
+    
+
+    function uint8ToBase64(u8Arr) {
+      const CHUNK_SIZE = 0x8000;
+      let index = 0;
+      let result = '';
+      while (index < u8Arr.length) {
+        let slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, u8Arr.length));
+        result += String.fromCharCode.apply(null, slice);
+        index += CHUNK_SIZE;
+      }
+      return btoa(result);
+    }
+      window.downloadImage = downloadImage;
+
+      // New function: uploadRingImage with SHA support
+      function uploadRingImage(extractedCode, base64Content) {
+        /// Rings images path (change)
+        const filePath = 'Images/Abbasi/' + extractedCode + '.jpg';
+        const getUrl = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/contents/' + filePath;
+        const xhrGet = new XMLHttpRequest();
+        xhrGet.open('GET', getUrl, true);
+        xhrGet.setRequestHeader('Authorization', getToken());
+        xhrGet.onload = function () {
+          let sha;
+          if (xhrGet.status === 200) {
+            const fileInfo = JSON.parse(xhrGet.responseText);
+            sha = fileInfo.sha;
+          }
+          const payload = {
+            message: 'Upload ring image for code ' + extractedCode,
+            content: base64Content,
+            branch: 'main'
+          };
+          if (sha) {
+            payload.sha = sha;
+          }
+          const putUrl = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/contents/' + filePath;
+          const xhrPut = new XMLHttpRequest();
+          xhrPut.open('PUT', putUrl, true);
+          xhrPut.setRequestHeader('Authorization', getToken());
+          xhrPut.setRequestHeader('Content-Type', 'application/json');
+          xhrPut.onload = function () {
+            if (xhrPut.status >= 200 && xhrPut.status < 300) {
+              alert('Workflow triggered and ring image uploaded successfully');
+              downloadImage();
+            } else {
+              alert('Workflow triggered, but error uploading ring image: ' + xhrPut.responseText);
+            }
+            document.getElementById("loadingOverlay").style.display = "none";
+          };
+          xhrPut.onerror = function () {
+            alert('An error occurred during the image upload request.');
+            downloadImage();
+            document.getElementById("loadingOverlay").style.display = "none";
+          };
+          xhrPut.send(JSON.stringify(payload));
+        };
+        xhrGet.onerror = function () {
+          // If GET fails, assume file doesn't exist; create new file.
+          const payload = {
+            message: 'Upload ring image for code ' + extractedCode,
+            content: base64Content,
+            branch: 'main'
+          };
+          const putUrl = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/contents/' + filePath;
+          const xhrPut = new XMLHttpRequest();
+          xhrPut.open('PUT', putUrl, true);
+          xhrPut.setRequestHeader('Authorization', getToken());
+          xhrPut.setRequestHeader('Content-Type', 'application/json');
+          xhrPut.onload = function () {
+            if (xhrPut.status >= 200 && xhrPut.status < 300) {
+              alert('Workflow triggered and ring image uploaded successfully');
+              downloadImage();
+            } else {
+              alert('Workflow triggered, but error uploading ring image: ' + xhrPut.responseText);
+            }
+            document.getElementById("loadingOverlay").style.display = "none";
+          };
+          xhrPut.onerror = function () {
+            alert('An error occurred during the image upload request.');
+            downloadImage();
+            document.getElementById("loadingOverlay").style.display = "none";
+          };
+          xhrPut.send(JSON.stringify(payload));
+        };
+        xhrGet.send();
+      }
+      window.uploadRingImage = uploadRingImage;
+    });
+  </script>
+  <script>
+    function extractCode(input) {
+      const match = input.match(/(\d+)/);
+      return match ? match[1] : '';
+    }
+
+    function submitForm(event) {
+      event.preventDefault();
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      loadingOverlay.style.display = "flex";
+      const codeInput = document.getElementById('number13').value;
+      const extractedCode = extractCode(codeInput);
+      if (!extractedCode) {
+        alert('Invalid Code format. Please provide a valid code.');
+        loadingOverlay.style.display = "none";
+        return;
+      }
+      const formData = {
+        title: extractedCode,
+        english_description: document.getElementById('englishTextArea').value,
+        persian_description: document.getElementById('arabicTextArea').value,
+        image: `${extractedCode}.jpg`
+      };
+      const xhr = new XMLHttpRequest();
+      /// github action (change)
+      const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/actions/workflows/Abbasi_Submit_Form.yml/dispatches';
+      xhr.open('POST', url, true);
+      xhr.setRequestHeader('Authorization', getToken());
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onload = function () {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          if (window.uploadedRingImage) {
+            const base64Content = window.uploadedRingImage.split(',')[1];
+            window.uploadRingImage(extractedCode, base64Content);
+          } else {
+            alert('Workflow triggered successfully');
+            loadingOverlay.style.display = "none";
+            downloadImage();
+          }
+        } else {
+          loadingOverlay.style.display = "none";
+          const result = JSON.parse(xhr.responseText);
+          alert(result.message ? result.message : 'An error occurred');
+        }
+      };
+      xhr.onerror = function () {
+        loadingOverlay.style.display = "none";
+        alert('An error occurred during the workflow request.');
+      };
+      xhr.send(JSON.stringify({
+        ref: 'main',
+        inputs: formData
+      }));
+    }
+  </script>
+</body>
+</html>

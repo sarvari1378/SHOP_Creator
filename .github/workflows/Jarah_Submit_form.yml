@@ -19,7 +19,11 @@ on:
         description: 'Image filename (from Images folder)'
         required: true
         type: string
-
+  
+  concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+  
 jobs:
   update_json:
     runs-on: ubuntu-latest

@@ -1,4 +1,4 @@
-name: 1. Create Item Request
+name: Add Item to JSON
 
 on:
   workflow_dispatch:
@@ -8,35 +8,94 @@ on:
         required: true
         type: string
       english_description:
-        description: 'Description in English (Single-line, auto-formats)'
+        description: 'English Description'
         required: true
         type: string
       persian_description:
-        description: 'Description in Persian (Single-line, auto-formats)'
+        description: 'Persian Description'
         required: true
         type: string
       image:
-        description: 'Image filename (from Images folder)'
+        description: 'Image filename'
         required: true
         type: string
 
+# این بخش کلید حل مشکل صف و تداخل است
+concurrency:
+  group: add-item-to-json # یک گروه ثابت برای همه اجراها
+  cancel-in-progress: false   # اجراهای جدید منتظر می‌مانند تا قبلی تمام شود
+
 jobs:
-  create_issue:
+  update_json:
     runs-on: ubuntu-latest
     steps:
-      - name: Create GitHub Issue for the new item
-        uses: dacbd/create-issue-action@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: "New Item Request: ${{ github.event.inputs.title }}"
-          body: |
-            ### New Item Details
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-            **Title:** `${{ github.event.inputs.title }}`
-            **English Description:** `${{ github.event.inputs.english_description }}`
-            **Persian Description:** `${{ github.event.inputs.persian_description }}`
-            **Image Filename:** `${{ github.event.inputs.image }}`
+      # این مرحله حیاتی است. منطق آپدیت و کامیت را در یک مرحله اتمیک انجام می‌دهیم
+      - name: Update JSON and Push with Retry
+        env:
+          # ورودی‌ها را به متغیرهای محیطی تبدیل می‌کنیم تا در اسکریپت راحت‌تر استفاده شوند
+          ITEM_TITLE: ${{ github.event.inputs.title }}
+          ITEM_DESC_EN_INPUT: ${{ github.event.inputs.english_description }}
+          ITEM_DESC_FA_INPUT: ${{ github.event.inputs.persian_description }}
+          ITEM_IMAGE_NAME: ${{ github.event.inputs.image }}
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          DATA_FILE="Data.json"
+          
+          # حلقه تلاش مجدد برای مقابله با شرایط رقابتی نادر
+          for i in {1..5}
+          do
+            # ۱. همیشه آخرین نسخه از شاخه اصلی را بکش
+            git pull origin main --rebase
+            
+            # ۲. دستور jq را برای اضافه کردن آیتم جدید اجرا کن
+            # این بار آیتم به فایل به‌روز شده اضافه می‌شود
+            IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${ITEM_IMAGE_NAME}"
+            
+            # تابع فرمت‌بندی توضیحات
+            add_newline_before_words() {
+              local input="$1"
+              local words_to_add_newline=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")
+              for word in "${words_to_add_newline[@]}"; do
+                input=$(echo "$input" | sed "s/\b$word\b/\n$word/g")
+              done
+              echo "$input"
+            }
 
-            ---
-            *This request will be processed automatically.*
-          labels: new-item-request # این برچسب کلید اصلی کار ماست
+            ITEM_DESC_EN=$(add_newline_before_words "${ITEM_DESC_EN_INPUT}")
+            ITEM_DESC_FA=$(add_newline_before_words "${ITEM_DESC_FA_INPUT}")
+            
+            json_content=$(cat $DATA_FILE)
+            new_item=$(jq -n --arg title "$ITEM_TITLE" --arg englishDescription "$ITEM_DESC_EN" --arg persianDescription "$ITEM_DESC_FA" --arg image "$IMAGE_RAW_URL" '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}')
+            new_json=$(echo "$json_content" | jq ".items += [$new_item]")
+            echo "$new_json" | jq '.' > $DATA_FILE
+
+            # ۳. بررسی اینکه آیا تغییری ایجاد شده است یا نه
+            if git diff --quiet $DATA_FILE; then
+              echo "No changes to commit. Exiting."
+              exit 0
+            fi
+
+            # ۴. کامیت و تلاش برای push
+            git add $DATA_FILE
+            git commit -m "Added new item: $ITEM_TITLE"
+            
+            # اگر push موفق بود، از حلقه خارج شو
+            if git push; then
+              echo "Success: Changes pushed on attempt $i."
+              exit 0 # خروج با موفقیت
+            else
+              # اگر push شکست خورد، کامیت را برگردان تا برای تلاش بعدی آماده شویم
+              echo "Attempt $i: Push failed. Retrying in 3 seconds..."
+              git reset --hard HEAD~1
+              sleep 3
+            fi
+          done
+
+          # اگر حلقه تمام شد و موفق نشدیم
+          echo "Error: Failed to push changes after 5 attempts."
+          exit 1

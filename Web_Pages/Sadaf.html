@@ -554,71 +554,69 @@
       return match ? match[1] : '';
     }
 
-    function submitForm(event) {
-      event.preventDefault();
-      const loadingOverlay = document.getElementById("loadingOverlay");
-      loadingOverlay.style.display = "flex";
+    // این کد را جایگزین تابع submitForm فعلی کنید
+function submitForm(event) {
+  event.preventDefault();
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  loadingOverlay.style.display = "flex";
+  
+  const codeInput = document.getElementById('number13').value;
+  const extractedCode = extractCode(codeInput); // فرض می‌کنیم تابع extractCode وجود دارد
+  if (!extractedCode) {
+    alert('Invalid Code format. Please provide a valid code.');
+    loadingOverlay.style.display = "none";
+    return;
+  }
 
-      const codeInput = document.getElementById('number13').value;
-      const extractedCode = extractCode(codeInput);
-      if (!extractedCode) {
-        alert('Invalid Code format. Please provide a valid code.');
+  // آماده‌سازی داده‌ها برای workflow_dispatch
+  const formData = {
+    title: extractedCode,
+    english_description: document.getElementById('englishTextArea').value,
+    persian_description: document.getElementById('arabicTextArea').value,
+    image: `${extractedCode}.jpg`
+  };
+
+  const xhr = new XMLHttpRequest();
+  // نام فایل ورک‌فلو را اینجا دقیق وارد کنید
+  const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/actions/workflows/add-item.yml/dispatches'; 
+  xhr.open('POST', url, true);
+  xhr.setRequestHeader('Authorization', `token ${getToken()}`); // استفاده از PAT شما
+  xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr.setRequestHeader('Content-Type', 'application/json');
+
+  xhr.onload = function () {
+    if (xhr.status === 204) { // 204 No Content یعنی درخواست با موفقیت پذیرفته شد
+      if (window.uploadedRingImage) {
+        const base64Content = window.uploadedRingImage.split(',')[1];
+        window.uploadRingImage(extractedCode, base64Content);
+      } else {
+        alert('Workflow triggered successfully! The process will start shortly.');
         loadingOverlay.style.display = "none";
-        return;
+        downloadImage();
       }
-
-      // ۱. آماده‌سازی داده‌ها برای بدنه Issue
-      const issueTitle = `New Item Request: ${extractedCode}`;
-      const issueBody = `### New Item Details
-
-**Title:** \`${extractedCode}\`
-**English Description:** \`${document.getElementById('englishTextArea').value}\`
-**Persian Description:** \`${document.getElementById('arabicTextArea').value}\`
-**Image Filename:** \`${extractedCode}.jpg\``;
-
-      // ۲. آماده‌سازی درخواست برای ساخت Issue
-      const xhr = new XMLHttpRequest();
-      const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/issues';
-      xhr.open('POST', url, true);
-      xhr.setRequestHeader('Authorization', `token ${getToken()}`); // استفاده از PAT شما
-      xhr.setRequestHeader('Content-Type', 'application/json');
-
-      xhr.onload = function () {
-        if (xhr.status === 201) { // 201 Created یعنی Issue با موفقیت ساخته شد
-          // حالا که Issue ساخته شد، تصویر را آپلود کن
-          if (window.uploadedRingImage) {
-            const base64Content = window.uploadedRingImage.split(',')[1];
-            // تابع uploadRingImage شما بعد از موفقیت، پیام را نمایش داده و لودینگ را پنهان می‌کند
-            window.uploadRingImage(extractedCode, base64Content);
-          } else {
-            alert('Request submitted successfully as an issue.');
-            loadingOverlay.style.display = "none";
-            downloadImage();
-          }
-        } else {
-          loadingOverlay.style.display = "none";
-          try {
-              const result = JSON.parse(xhr.responseText);
-              alert(result.message ? `Error creating issue: ${result.message}` : 'An unknown error occurred.');
-          } catch(e) {
-              alert('An error occurred while creating the issue. Status: ' + xhr.status);
-          }
-        }
-      };
-
-      xhr.onerror = function () {
-        loadingOverlay.style.display = "none";
-        alert('An error occurred during the issue creation request.');
-      };
-
-      // ۳. ارسال درخواست با داده‌های Issue
-      xhr.send(JSON.stringify({
-        title: issueTitle,
-        body: issueBody,
-        labels: ['new-item-request'] // برچسب کلیدی ما
-      }));
+    } else {
+      loadingOverlay.style.display = "none";
+      try {
+        const result = JSON.parse(xhr.responseText);
+        alert(result.message ? `Error: ${result.message}` : 'An unknown error occurred.');
+      } catch(e) {
+        alert('An error occurred. Status: ' + xhr.status);
+      }
     }
+  };
+
+  xhr.onerror = function () {
+    loadingOverlay.style.display = "none";
+    alert('A network error occurred.');
+  };
+
+  xhr.send(JSON.stringify({
+    ref: 'main',
+    inputs: formData
+  }));
+}
 </script>
 </body>
 </html>
+
 

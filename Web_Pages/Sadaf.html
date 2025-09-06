@@ -558,6 +558,7 @@
       event.preventDefault();
       const loadingOverlay = document.getElementById("loadingOverlay");
       loadingOverlay.style.display = "flex";
+
       const codeInput = document.getElementById('number13').value;
       const extractedCode = extractCode(codeInput);
       if (!extractedCode) {
@@ -565,42 +566,59 @@
         loadingOverlay.style.display = "none";
         return;
       }
-      const formData = {
-        title: extractedCode,
-        english_description: document.getElementById('englishTextArea').value,
-        persian_description: document.getElementById('arabicTextArea').value,
-        image: `${extractedCode}.jpg`
-      };
+
+      // ۱. آماده‌سازی داده‌ها برای بدنه Issue
+      const issueTitle = `New Item Request: ${extractedCode}`;
+      const issueBody = `### New Item Details
+
+**Title:** \`${extractedCode}\`
+**English Description:** \`${document.getElementById('englishTextArea').value}\`
+**Persian Description:** \`${document.getElementById('arabicTextArea').value}\`
+**Image Filename:** \`${extractedCode}.jpg\``;
+
+      // ۲. آماده‌سازی درخواست برای ساخت Issue
       const xhr = new XMLHttpRequest();
-      const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/actions/workflows/ADD_Items.yml/dispatches';
+      const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/issues';
       xhr.open('POST', url, true);
-      xhr.setRequestHeader('Authorization', getToken());
+      xhr.setRequestHeader('Authorization', `token ${getToken()}`); // استفاده از PAT شما
       xhr.setRequestHeader('Content-Type', 'application/json');
+
       xhr.onload = function () {
-        if (xhr.status >= 200 && xhr.status < 300) {
+        if (xhr.status === 201) { // 201 Created یعنی Issue با موفقیت ساخته شد
+          // حالا که Issue ساخته شد، تصویر را آپلود کن
           if (window.uploadedRingImage) {
             const base64Content = window.uploadedRingImage.split(',')[1];
+            // تابع uploadRingImage شما بعد از موفقیت، پیام را نمایش داده و لودینگ را پنهان می‌کند
             window.uploadRingImage(extractedCode, base64Content);
           } else {
-            alert('Workflow triggered successfully');
+            alert('Request submitted successfully as an issue.');
             loadingOverlay.style.display = "none";
             downloadImage();
           }
         } else {
           loadingOverlay.style.display = "none";
-          const result = JSON.parse(xhr.responseText);
-          alert(result.message ? result.message : 'An error occurred');
+          try {
+              const result = JSON.parse(xhr.responseText);
+              alert(result.message ? `Error creating issue: ${result.message}` : 'An unknown error occurred.');
+          } catch(e) {
+              alert('An error occurred while creating the issue. Status: ' + xhr.status);
+          }
         }
       };
+
       xhr.onerror = function () {
         loadingOverlay.style.display = "none";
-        alert('An error occurred during the workflow request.');
+        alert('An error occurred during the issue creation request.');
       };
+
+      // ۳. ارسال درخواست با داده‌های Issue
       xhr.send(JSON.stringify({
-        ref: 'main',
-        inputs: formData
+        title: issueTitle,
+        body: issueBody,
+        labels: ['new-item-request'] // برچسب کلیدی ما
       }));
     }
-  </script>
+</script>
 </body>
 </html>
+

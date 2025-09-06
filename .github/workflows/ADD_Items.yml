@@ -1,4 +1,4 @@
-name: Sadaf Add Item to JSON
+name: Super-Fast and Resilient Add Item
 
 on:
   workflow_dispatch:
@@ -20,47 +20,39 @@ on:
         required: true
         type: string
 
-# هیچ‌گونه تنظیمات concurrency وجود ندارد تا همه درخواست‌ها به صورت موازی اجرا شوند
-
 jobs:
   fast_update:
     runs-on: ubuntu-latest
     steps:
-      # مرحله ۱: چک‌اوت فوق سریع با دانلود فقط فایل Data.json
-      # این کار زمان اجرای این مرحله را از ۱ دقیقه به کمتر از ۱ ثانیه کاهش می‌دهد
-      - name: Checkout only the Data.json file
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          sparse-checkout: |
-            Data.json
-          fetch-depth: 1
+          # ما به توکن نیاز داریم تا بتوانیم push کنیم
+          token: ${{ secrets.GITHUB_TOKEN }} 
 
-      # مرحله ۲: تمام کارها در یک مرحله سریع و مقاوم در برابر تداخل
-      - name: Prepare, Update, and Push
+      - name: Atomically Update and Push
         env:
           ITEM_TITLE: ${{ github.event.inputs.title }}
           ITEM_DESC_EN: ${{ github.event.inputs.english_description }}
           ITEM_DESC_FA: ${{ github.event.inputs.persian_description }}
           ITEM_IMAGE: ${{ github.event.inputs.image }}
         run: |
-          # اگر هر دستوری شکست خورد، کل اسکریپت متوقف شود
           set -e
 
-          # پیکربندی Git برای کامیت کردن
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # برای اینکه git pull بتواند به درستی کار کند، باید از حالت چک‌اوت پراکنده خارج شویم.
-          # این دستور بسیار سریع است و فایلی دانلود نمی‌کند.
-          git sparse-checkout disable
-
-          # حلقه تلاش مجدد برای مقابله با تداخل‌های نادر
+          # حلقه تلاش مجدد با منطق جدید
           for i in {1..5}
           do
-            # الف) آخرین نسخه از ریپازیتوری را با rebase بکش
-            git pull origin main --rebase
+            # ۱. دریافت آخرین اطلاعات از سرور (بدون تغییر فایل‌های محلی)
+            git fetch origin main
 
-            # ب) فایل JSON را با داده‌های جدید آپدیت کن
+            # ۲. بازنشانی کامل به آخرین نسخه روی سرور.
+            # این کار هرگونه کامیت محلی ناموفق یا تداخل را پاک می‌کند.
+            git reset --hard origin/main
+
+            # ۳. حالا که روی آخرین نسخه هستیم، تغییرات خود را دوباره اعمال می‌کنیم
             DATA_FILE="Data.json"
             IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${ITEM_IMAGE}"
             
@@ -77,31 +69,25 @@ jobs:
             FORMATTED_DESC_FA=$(add_newline_before_words "${ITEM_DESC_FA}")
             
             json_content=$(cat $DATA_FILE)
-            new_item=$(jq -n \
-              --arg title "$ITEM_TITLE" \
-              --arg englishDescription "$FORMATTED_DESC_EN" \
-              --arg persianDescription "$FORMATTED_DESC_FA" \
-              --arg image "$IMAGE_RAW_URL" \
-              '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}')
-            
+            new_item=$(jq -n --arg title "$ITEM_TITLE" --arg englishDescription "$FORMATTED_DESC_EN" --arg persianDescription "$FORMATTED_DESC_FA" --arg image "$IMAGE_RAW_URL" '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}')
             new_json=$(echo "$json_content" | jq ".items += [$new_item]")
             echo "$new_json" | jq '.' > $DATA_FILE
 
-            # ج) تغییرات را کامیت و پوش کن
+            # ۴. کامیت جدید را ایجاد و تلاش برای push می‌کنیم
             git add $DATA_FILE
             git commit -m "Added new item: $ITEM_TITLE"
             
-            # اگر پوش موفق بود، با موفقیت از حلقه و اسکریپت خارج شو
+            # اگر پوش موفق بود، با موفقیت خارج شو
             if git push; then
               echo "Push successful on attempt $i!"
               exit 0
             fi
             
-            # اگر پوش شکست خورد، یک ثانیه صبر کرده و دوباره تلاش کن
-            echo "Push failed on attempt $i. Retrying..."
-            sleep 1
+            # اگر پوش شکست خورد، یعنی یک نفر دیگر در همین لحظه پوش کرده است.
+            # حلقه تکرار می‌شود و ما دوباره از آخرین نسخه شروع می‌کنیم.
+            echo "Push failed on attempt $i. Another process may have pushed. Retrying..."
+            sleep $(shuf -i 1-3 -n 1) # یک تا سه ثانیه به صورت تصادفی صبر کن
           done
 
-          # اگر بعد از 5 تلاش موفق نشدیم، ورک‌فلو را با خطا متوقف کن
           echo "Error: Could not push changes after multiple attempts."
           exit 1

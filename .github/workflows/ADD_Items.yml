@@ -1,27 +1,33 @@
-name: Super-Fast Add Item to JSON
+name: Sadaf Add Item to JSON
 
 on:
   workflow_dispatch:
     inputs:
-      # ... (ورودی‌ها بدون تغییر)
       title:
+        description: 'Item Code/Title'
         required: true
         type: string
       english_description:
+        description: 'English Description'
         required: true
         type: string
       persian_description:
+        description: 'Persian Description'
         required: true
         type: string
       image:
+        description: 'Image Filename'
         required: true
         type: string
+
+# هیچ‌گونه تنظیمات concurrency وجود ندارد تا همه درخواست‌ها به صورت موازی اجرا شوند
 
 jobs:
   fast_update:
     runs-on: ubuntu-latest
     steps:
-      # مرحله ۱: چک‌اوت فوق سریع با دانلود فقط یک فایل
+      # مرحله ۱: چک‌اوت فوق سریع با دانلود فقط فایل Data.json
+      # این کار زمان اجرای این مرحله را از ۱ دقیقه به کمتر از ۱ ثانیه کاهش می‌دهد
       - name: Checkout only the Data.json file
         uses: actions/checkout@v3
         with:
@@ -29,7 +35,7 @@ jobs:
             Data.json
           fetch-depth: 1
 
-      # مرحله ۲: تمام کارها در یک مرحله سریع و اتمیک
+      # مرحله ۲: تمام کارها در یک مرحله سریع و مقاوم در برابر تداخل
       - name: Prepare, Update, and Push
         env:
           ITEM_TITLE: ${{ github.event.inputs.title }}
@@ -37,21 +43,24 @@ jobs:
           ITEM_DESC_FA: ${{ github.event.inputs.persian_description }}
           ITEM_IMAGE: ${{ github.event.inputs.image }}
         run: |
+          # اگر هر دستوری شکست خورد، کل اسکریپت متوقف شود
           set -e
 
-          # ۱. پیکربندی Git
+          # پیکربندی Git برای کامیت کردن
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # چون ما فقط یک فایل را checkout کردیم، قبل از pull باید کل ریپازیتوری را "un-sparse" کنیم
-          # تا git pull بتواند به درستی کار کند. این دستورات سریع هستند.
+          # برای اینکه git pull بتواند به درستی کار کند، باید از حالت چک‌اوت پراکنده خارج شویم.
+          # این دستور بسیار سریع است و فایلی دانلود نمی‌کند.
           git sparse-checkout disable
 
-          # ۲. حلقه تلاش مجدد برای مقابله با تداخل
+          # حلقه تلاش مجدد برای مقابله با تداخل‌های نادر
           for i in {1..5}
           do
+            # الف) آخرین نسخه از ریپازیتوری را با rebase بکش
             git pull origin main --rebase
 
+            # ب) فایل JSON را با داده‌های جدید آپدیت کن
             DATA_FILE="Data.json"
             IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${ITEM_IMAGE}"
             
@@ -68,21 +77,31 @@ jobs:
             FORMATTED_DESC_FA=$(add_newline_before_words "${ITEM_DESC_FA}")
             
             json_content=$(cat $DATA_FILE)
-            new_item=$(jq -n --arg title "$ITEM_TITLE" --arg englishDescription "$FORMATTED_DESC_EN" --arg persianDescription "$FORMATTED_DESC_FA" --arg image "$IMAGE_RAW_URL" '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}')
+            new_item=$(jq -n \
+              --arg title "$ITEM_TITLE" \
+              --arg englishDescription "$FORMATTED_DESC_EN" \
+              --arg persianDescription "$FORMATTED_DESC_FA" \
+              --arg image "$IMAGE_RAW_URL" \
+              '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}')
+            
             new_json=$(echo "$json_content" | jq ".items += [$new_item]")
             echo "$new_json" | jq '.' > $DATA_FILE
 
+            # ج) تغییرات را کامیت و پوش کن
             git add $DATA_FILE
             git commit -m "Added new item: $ITEM_TITLE"
             
+            # اگر پوش موفق بود، با موفقیت از حلقه و اسکریپت خارج شو
             if git push; then
               echo "Push successful on attempt $i!"
               exit 0
             fi
             
+            # اگر پوش شکست خورد، یک ثانیه صبر کرده و دوباره تلاش کن
             echo "Push failed on attempt $i. Retrying..."
             sleep 1
           done
 
+          # اگر بعد از 5 تلاش موفق نشدیم، ورک‌فلو را با خطا متوقف کن
           echo "Error: Could not push changes after multiple attempts."
           exit 1

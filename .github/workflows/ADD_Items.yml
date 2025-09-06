@@ -31,7 +31,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Fetch full history to ensure we can pull remote changes
+          fetch-depth: 0  # Fetch full history for pull/rebase
 
       - name: Get raw URL of selected image
         id: image_url
@@ -46,7 +46,7 @@ jobs:
 
           add_newline_before_words() {
             local input="$1"
-            local words_to_add_newline=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")  # Add words here that should trigger a newline before them
+            local words_to_add_newline=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")  # Add words here
 
             for word in "${words_to_add_newline[@]}"; do
               input=$(echo "$input" | sed "s/\b$word\b/\n$word/g")
@@ -70,16 +70,45 @@ jobs:
                   '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}'
           )
 
-          # Add the new item to the existing JSON file
           new_json=$(echo "$json_content" | jq ".items += [$new_item]")
           echo "$new_json" | jq '.' > $DATA_FILE
 
-      - name: Commit and push changes
+      - name: Commit and push changes with retry
         run: |
-          git config --global user.email "your-email@example.com"
-          git config --global user.name "Your Name"
+          # Configure Git for the Actions bot
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
           git add Data.json
+          # Create a local commit
           git commit -m "Added new item: ${{ github.event.inputs.title }}" || echo "No changes to commit"
-          # Pull remote changes and rebase your commit on top
-          git pull origin main --rebase
-          git push
+
+          # Retry loop to handle race conditions
+          for i in {1..5}
+          do
+            # Pull the latest changes from the remote, and rebase our local commit on top
+            git pull origin main --rebase
+
+            # Check if the pull/rebase was successful. 0 means success.
+            if [ $? -eq 0 ]; then
+              # If pull was successful, attempt to push
+              echo "Attempt $i: Pull successful, attempting to push..."
+              if git push; then
+                echo "Success: Changes pushed on attempt $i."
+                exit 0 # Exit the script with success
+              else
+                echo "Attempt $i: Push failed. Another process might have pushed. Retrying in 5 seconds..."
+              fi
+            else
+              # If pull --rebase failed, it's a conflict. Abort the rebase and retry the whole process.
+              echo "Attempt $i: Rebase conflict detected. Aborting rebase and retrying in 5 seconds..."
+              git rebase --abort
+            fi
+            
+            # Wait for a few seconds before the next attempt
+            sleep 5
+          done
+
+          # If the loop finishes without a successful push, fail the workflow
+          echo "Error: Failed to push changes after 5 attempts."
+          exit 1

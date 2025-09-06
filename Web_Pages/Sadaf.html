@@ -549,18 +549,15 @@
     });
   </script>
   <script>
-    // تابع کمکی برای استخراج کد عددی
     function extractCode(input) {
       const match = input.match(/(\d+)/);
       return match ? match[1] : '';
     }
 
-    // تابع اصلی برای ارسال فرم
     function submitForm(event) {
       event.preventDefault();
       const loadingOverlay = document.getElementById("loadingOverlay");
       loadingOverlay.style.display = "flex";
-      
       const codeInput = document.getElementById('number13').value;
       const extractedCode = extractCode(codeInput);
       if (!extractedCode) {
@@ -568,67 +565,47 @@
         loadingOverlay.style.display = "none";
         return;
       }
-
-      // ۱. آماده‌سازی داده‌ها برای ارسال به ورک‌فلو
       const formData = {
         title: extractedCode,
         english_description: document.getElementById('englishTextArea').value,
         persian_description: document.getElementById('arabicTextArea').value,
         image: `${extractedCode}.jpg`
       };
-
-      // ۲. ساخت و ارسال درخواست AJAX به API گیت‌هاب
       const xhr = new XMLHttpRequest();
-      // این URL دقیقاً برای ورک‌فلو شما تنظیم شده است
-      const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/actions/workflows/ADD_Items.yml/dispatches';
-      
+      /// github action (change)
+      const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/actions/workflows/Jarah_Submit_form.yml/dispatches';
       xhr.open('POST', url, true);
-      // استفاده از توکن شخصی شما (PAT) برای احراز هویت
-      xhr.setRequestHeader('Authorization', `token ${getToken()}`); 
-      xhr.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+      xhr.setRequestHeader('Authorization', getToken());
       xhr.setRequestHeader('Content-Type', 'application/json');
-
       xhr.onload = function () {
-        // گیت‌هاب در صورت موفقیت، کد 204 را برمی‌گرداند
-        if (xhr.status === 204) {
-          // اگر تصویر انگشتر برای آپلود وجود داشت، آن را آپلود کن
+        if (xhr.status >= 200 && xhr.status < 300) {
           if (window.uploadedRingImage) {
             const base64Content = window.uploadedRingImage.split(',')[1];
-            // تابع uploadRingImage خودش پیام موفقیت را نمایش می‌دهد و لودینگ را می‌بندد
             window.uploadRingImage(extractedCode, base64Content);
           } else {
-            // اگر تصویری برای آپلود نبود، مستقیماً پیام موفقیت را نمایش بده
-            alert('Workflow triggered successfully! The process will start shortly.');
+            alert('Workflow triggered successfully');
             loadingOverlay.style.display = "none";
-            downloadImage(); // تابع دانلود طرح نهایی را فراخوانی کن
+            downloadImage();
           }
         } else {
-          // در صورت بروز خطا، پیام خطا را از پاسخ گیت‌هاب نمایش بده
           loadingOverlay.style.display = "none";
-          try {
-            const result = JSON.parse(xhr.responseText);
-            alert(`Error triggering workflow: ${result.message || 'Unknown error'}`);
-          } catch(e) {
-            alert(`An error occurred. Status: ${xhr.status}`);
-          }
+          const result = JSON.parse(xhr.responseText);
+          alert(result.message ? result.message : 'An error occurred');
         }
       };
-
       xhr.onerror = function () {
-        // در صورت بروز خطای شبکه
         loadingOverlay.style.display = "none";
-        alert('A network error occurred while sending the request.');
+        alert('An error occurred during the workflow request.');
       };
-
-      // ۳. ارسال درخواست با داده‌های فرم در قالب JSON
       xhr.send(JSON.stringify({
-        ref: 'main', // شاخه‌ای که ورک‌فلو باید روی آن اجرا شود
+        ref: 'main',
         inputs: formData
       }));
     }
-</script>
+  </script>
 </body>
 </html>
+
 
 
 

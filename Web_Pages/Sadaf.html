@@ -124,7 +124,6 @@
     
   </div>
   <div class="container">
-    <h2>تصویر کیو آر کد Image</h2>
     <!-- This input will be automatically filled based on the code input -->
     <input
       type="text"
@@ -135,6 +134,7 @@
       data-width="500"
       data-height="500"
       data-mode="darken"
+      hidden
     />
 
     <h2>تصویر انگشتر</h2>
@@ -572,7 +572,6 @@
         image: `${extractedCode}.jpg`
       };
       const xhr = new XMLHttpRequest();
-      /// github action (change)
       const url = 'https://api.github.com/repos/sarvari1378/SHOP_Creator/actions/workflows/ADD_Items.yml/dispatches';
       xhr.open('POST', url, true);
       xhr.setRequestHeader('Authorization', getToken());
@@ -605,8 +604,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-

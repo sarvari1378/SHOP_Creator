@@ -24,16 +24,15 @@ jobs:
   fast_update:
     runs-on: ubuntu-latest
     steps:
-      # مرحله ۱: چک‌اوت فوق سریع. فقط Data.json را دانلود می‌کند.
-      # زمان اجرا: کمتر از ۲ ثانیه
+      # مرحله ۱: چک‌اوت فوق سریع با دانلود فقط یک فایل
       - name: Checkout only the data file
         uses: actions/checkout@v3
         with:
           sparse-checkout: |
             Data.json
-          fetch-depth: 1 # فقط آخرین کامیت را برای سرعت بیشتر می‌گیریم
+          fetch-depth: 1 # شروع با یک کلون کم‌عمق برای حداکثر سرعت
 
-      # مرحله ۲: آپدیت و پوش اتمیک با منطق جدید ضد-تداخل
+      # مرحله ۲: آپدیت و پوش اتمیک با منطق نهایی ضد-تداخل
       - name: Atomically Update and Push
         env:
           ITEM_TITLE: ${{ github.event.inputs.title }}
@@ -46,17 +45,22 @@ jobs:
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # حلقه تلاش مجدد با منطق جدید "بازنویسی"
+          # برای اینکه git pull/push بتواند به درستی کار کند، باید از حالت چک‌اوت پراکنده خارج شویم.
+          git sparse-checkout disable
+          
+          # برای push کردن، باید کل تاریخچه را داشته باشیم.
+          # این دستور را فقط یک بار و خارج از حلقه اجرا می‌کنیم.
+          git fetch --unshallow
+
+          # حلقه تلاش مجدد با منطق "ریست کامل"
           for i in {1..5}
           do
-            # ۱. آخرین اطلاعات را از سرور بگیر (فقط metadata، نه فایل‌ها)
+            # ۱. آخرین اطلاعات را از سرور بگیر و ریپازیتوری محلی را دقیقاً مانند آن کن.
+            # این کار هرگونه کامیت ناموفق یا تداخل قبلی را پاک می‌کند.
             git fetch origin main
+            git reset --hard origin/main
 
-            # ۲. فایل Data.json محلی را با آخرین نسخه روی سرور بازنویسی کن.
-            # این کار هرگونه تداخل را قبل از وقوع از بین می‌برد.
-            git checkout origin/main -- Data.json
-
-            # ۳. حالا که روی آخرین نسخه هستیم، تغییرات خود را اعمال می‌کنیم
+            # ۲. حالا که روی آخرین نسخه هستیم، تغییرات خود را دوباره اعمال می‌کنیم
             DATA_FILE="Data.json"
             IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${ITEM_IMAGE}"
             
@@ -77,20 +81,18 @@ jobs:
             new_json=$(echo "$json_content" | jq ".items += [$new_item]")
             echo "$new_json" | jq '.' > $DATA_FILE
 
-            # ۴. کامیت جدید را ایجاد و تلاش برای push می‌کنیم
+            # ۳. کامیت جدید را ایجاد و تلاش برای push می‌کنیم
             git add $DATA_FILE
             git commit -m "Added new item: $ITEM_TITLE"
             
-            # برای push کردن، باید کل تاریخچه را داشته باشیم. این دستور آن را به سرعت می‌گیرد.
-            git fetch --unshallow
-            
-            if git push origin HEAD:main; then
+            # اگر پوش موفق بود، با موفقیت خارج شو
+            if git push; then
               echo "Push successful on attempt $i!"
               exit 0
             fi
             
             echo "Push failed on attempt $i. Retrying after a short random delay..."
-            sleep $(shuf -i 1-3 -n 1)
+            sleep $(shuf -i 1-3 -n 1) # یک تا سه ثانیه به صورت تصادفی صبر کن
           done
 
           echo "Error: Could not push changes after multiple attempts."

@@ -1,38 +1,33 @@
-name: Fast Add Item to JSON
+name: Super-Fast Add Item to JSON
 
 on:
   workflow_dispatch:
     inputs:
+      # ... (ورودی‌ها بدون تغییر)
       title:
-        description: 'Item Code/Title'
         required: true
         type: string
       english_description:
-        description: 'English Description'
         required: true
         type: string
       persian_description:
-        description: 'Persian Description'
         required: true
         type: string
       image:
-        description: 'Image Filename'
         required: true
         type: string
-
-# بدون concurrency - اجازه می‌دهیم همه چیز موازی اجرا شود
-# concurrency: ... (این بخش کاملاً حذف شده است)
 
 jobs:
   fast_update:
     runs-on: ubuntu-latest
     steps:
-      # مرحله ۱: دریافت کد با حداقل عمق برای حداکثر سرعت
-      - name: Checkout repository
+      # مرحله ۱: چک‌اوت فوق سریع با دانلود فقط یک فایل
+      - name: Checkout only the Data.json file
         uses: actions/checkout@v3
         with:
-          fetch-depth: 1 # فقط آخرین کامیت را می‌گیریم
-          token: ${{ secrets.GITHUB_TOKEN }} # استفاده از توکن پیش‌فرض برای checkout کافیست
+          sparse-checkout: |
+            Data.json
+          fetch-depth: 1
 
       # مرحله ۲: تمام کارها در یک مرحله سریع و اتمیک
       - name: Prepare, Update, and Push
@@ -42,64 +37,52 @@ jobs:
           ITEM_DESC_FA: ${{ github.event.inputs.persian_description }}
           ITEM_IMAGE: ${{ github.event.inputs.image }}
         run: |
-          set -e # اگر دستوری شکست خورد، کل اسکریپت متوقف شود
+          set -e
 
           # ۱. پیکربندی Git
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # چون ما فقط یک فایل را checkout کردیم، قبل از pull باید کل ریپازیتوری را "un-sparse" کنیم
+          # تا git pull بتواند به درستی کار کند. این دستورات سریع هستند.
+          git sparse-checkout disable
 
-          # ۲. آماده‌سازی داده‌ها (این بخش بسیار سریع است)
-          DATA_FILE="Data.json"
-          IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${ITEM_IMAGE}"
-
-          add_newline_before_words() {
-            local input="$1"
-            # کلمات کلیدی برای افزودن newline
-            local words=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")
-            for word in "${words[@]}"; do
-              input=$(echo "$input" | sed "s/\b$word\b/\n$word/g")
-            done
-            echo "$input"
-          }
-
-          FORMATTED_DESC_EN=$(add_newline_before_words "${ITEM_DESC_EN}")
-          FORMATTED_DESC_FA=$(add_newline_before_words "${ITEM_DESC_FA}")
-
-          # ۳. حلقه تلاش مجدد برای مقابله با تداخل (بسیار سریع)
+          # ۲. حلقه تلاش مجدد برای مقابله با تداخل
           for i in {1..5}
           do
-            # الف) آخرین نسخه فایل را از سرور بکش
-            # این کار تضمین می‌کند که روی جدیدترین نسخه کار می‌کنیم
             git pull origin main --rebase
 
-            # ب) فایل JSON را با داده‌های جدید آپدیت کن
-            json_content=$(cat $DATA_FILE)
-            new_item=$(jq -n \
-              --arg title "$ITEM_TITLE" \
-              --arg englishDescription "$FORMATTED_DESC_EN" \
-              --arg persianDescription "$FORMATTED_DESC_FA" \
-              --arg image "$IMAGE_RAW_URL" \
-              '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}')
+            DATA_FILE="Data.json"
+            IMAGE_RAW_URL="https://raw.githubusercontent.com/${{ github.repository }}/main/Images/${ITEM_IMAGE}"
             
+            add_newline_before_words() {
+              local input="$1"
+              local words=("Ring" "Silver" "Weight" "Type" "مديل" "نوع" "عيار" "الوزن")
+              for word in "${words[@]}"; do
+                input=$(echo "$input" | sed "s/\b$word\b/\n$word/g")
+              done
+              echo "$input"
+            }
+
+            FORMATTED_DESC_EN=$(add_newline_before_words "${ITEM_DESC_EN}")
+            FORMATTED_DESC_FA=$(add_newline_before_words "${ITEM_DESC_FA}")
+            
+            json_content=$(cat $DATA_FILE)
+            new_item=$(jq -n --arg title "$ITEM_TITLE" --arg englishDescription "$FORMATTED_DESC_EN" --arg persianDescription "$FORMATTED_DESC_FA" --arg image "$IMAGE_RAW_URL" '{title: $title, englishDescription: $englishDescription, persianDescription: $persianDescription, image: $image}')
             new_json=$(echo "$json_content" | jq ".items += [$new_item]")
             echo "$new_json" | jq '.' > $DATA_FILE
 
-            # ج) تغییرات را کامیت و پوش کن
             git add $DATA_FILE
-            # اگر تغییری نباشد، کامیت شکست می‌خورد و حلقه ادامه پیدا می‌کند
             git commit -m "Added new item: $ITEM_TITLE"
             
-            # اگر پوش موفق بود، با موفقیت خارج شو
             if git push; then
               echo "Push successful on attempt $i!"
               exit 0
             fi
             
-            # اگر پوش شکست خورد، یک ثانیه صبر کرده و دوباره تلاش کن
             echo "Push failed on attempt $i. Retrying..."
             sleep 1
           done
 
-          # اگر بعد از 5 تلاش موفق نشدیم، ورک‌فلو را با خطا متوقف کن
           echo "Error: Could not push changes after multiple attempts."
           exit 1

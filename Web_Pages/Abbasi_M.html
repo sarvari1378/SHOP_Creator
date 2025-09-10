@@ -137,7 +137,7 @@
       id="circleImageInput"
       accept="image/*"
       data-x="150"
-      data-y="230"
+      data-y="185"
       data-width="330"
       data-height="330"
       data-Roundness="75"
@@ -336,7 +336,7 @@
         canvas.width = baseImage.width;
         canvas.height = baseImage.height;
         ctx.drawImage(baseImage, 0, 0);
-        drawImageWithMode(ctx, ringImg, document.getElementById("ringImageInput"));
+        //drawImageWithMode(ctx, ringImg, document.getElementById("ringImageInput"));
         drawCircleImage(ctx, circleImg, document.getElementById("circleImageInput"));
         document.querySelectorAll("input[type='text']:not(#ringImageInput), textarea")
           .forEach(function (input) {

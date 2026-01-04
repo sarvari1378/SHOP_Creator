@@ -156,18 +156,18 @@
     
     
     <input type="text" id="number1" placeholder="Pedal Name" data-align="left" data-x="500" data-y="200" data-font="EnglishFont" data-x2="500" data-y2="475" value = "Pedal Name:">
-    <input type="text" id="number2" placeholder="Build Type" data-align="left" data-x="500" data-y="230" data-font="EnglishFont" data-x2="516" data-y2="506" value = "Build Type: Hand made">
-    <input type="text" id="number3" placeholder="Percentage of silver" data-align="left" data-x="500" data-y="260" data-font="EnglishFont" data-x2="606" data-y2="535" value = "Percentage of silver: 925">
-    <input type="text" id="number4" placeholder="Type of stone" data-align="left" data-x="500" data-y="290" data-font="EnglishFont" data-x2="548" data-y2="565" value = "Type of stone:">
-    <input type="text" id="number5" placeholder="Number of Diamond" data-align="left" data-x="500" data-y="320" data-font="EnglishFont" data-x2="548" data-y2="565" value = "Number of Diamond:">
-    <input type="text" id="number6" placeholder="Weight" data-align="left" data-x="500" data-y="350" data-font="EnglishFont" data-x2="490" data-y2="594" value = "Weight:">
+    <input type="text" id="number2" placeholder="Build Type" data-align="left" data-x="500" data-y="235" data-font="EnglishFont" data-x2="516" data-y2="506" value = "Build Type: Hand made">
+    <input type="text" id="number3" placeholder="Percentage of silver" data-align="left" data-x="500" data-y="270" data-font="EnglishFont" data-x2="606" data-y2="535" value = "Percentage of silver: 925">
+    <input type="text" id="number4" placeholder="Type of stone" data-align="left" data-x="500" data-y="305" data-font="EnglishFont" data-x2="548" data-y2="565" value = "Type of stone:">
+    <input type="text" id="number5" placeholder="Number of Diamond" data-align="left" data-x="500" data-y="340" data-font="EnglishFont" data-x2="548" data-y2="565" value = "Number of Diamond:">
+    <input type="text" id="number6" placeholder="Weight" data-align="left" data-x="500" data-y="375" data-font="EnglishFont" data-x2="490" data-y2="594" value = "Weight:">
     
-    <input type="text" id="number8" placeholder="اسم دواسه" data-align="right" data-x="930" data-y="410" data-font="ArabicFont" data-x2="873" data-y2="472" dir = "rtl" value = "اسم دواسه:" >
-    <input type="text" id="number9" placeholder="نوع صیاغه" data-align="right" data-x="930" data-y="440" data-font="ArabicFont" data-x2="873" data-y2="501" dir = "rtl" value = "نوع صیاغه: یدوی جراح">
-    <input type="text" id="number10" placeholder="عیار الفضه" data-align="right" data-x="930" data-y="470" data-font="ArabicFont" data-x2="875" data-y2="530" dir = "rtl"value = "عیار الفضه: ۹۲۵">
-    <input type="text" id="number11" placeholder="خاتم التوقیع" data-align="right" data-x="930" data-y="500" data-font="ArabicFont" data-x2="875" data-y2="562" dir = "rtl" value = "خاتم التوقیع:">
-    <input type="text" id="number12" placeholder="عدد الماس" data-align="right" data-x="930" data-y="530" data-font="ArabicFont" data-x2="875" data-y2="568" dir = "rtl" value = "عدد الماس:">
-    <input type="text" id="number19" placeholder="الوزن" data-align="right" data-x="930" data-y="560" data-font="ArabicFont" data-x2="917" data-y2="591" dir = "rtl" value = "الوزن:">
+    <input type="text" id="number8" placeholder="اسم دواسه" data-align="right" data-x="930" data-y="425" data-font="ArabicFont" data-x2="873" data-y2="472" dir = "rtl" value = "اسم دواسه:" >
+    <input type="text" id="number9" placeholder="نوع صیاغه" data-align="right" data-x="930" data-y="460" data-font="ArabicFont" data-x2="873" data-y2="501" dir = "rtl" value = "نوع صیاغه: یدوی جراح">
+    <input type="text" id="number10" placeholder="عیار الفضه" data-align="right" data-x="930" data-y="495" data-font="ArabicFont" data-x2="875" data-y2="530" dir = "rtl"value = "عیار الفضه: ۹۲۵">
+    <input type="text" id="number11" placeholder="خاتم التوقیع" data-align="right" data-x="930" data-y="530" data-font="ArabicFont" data-x2="875" data-y2="562" dir = "rtl" value = "خاتم التوقیع:">
+    <input type="text" id="number12" placeholder="عدد الماس" data-align="right" data-x="930" data-y="565" data-font="ArabicFont" data-x2="875" data-y2="568" dir = "rtl" value = "عدد الماس:">
+    <input type="text" id="number19" placeholder="الوزن" data-align="right" data-x="930" data-y="600" data-font="ArabicFont" data-x2="917" data-y2="591" dir = "rtl" value = "الوزن:">
     
     
     
@@ -350,7 +350,7 @@
             const y = parseInt(input.dataset.y, 10) || 50;
             const font = input.dataset.font || "EnglishFont";
             const color = input.dataset.color || "#231f20";
-            const fontSize = input.dataset.fontsize || "24";
+            const fontSize = input.dataset.fontsize || "32";
             ctx.font = fontSize + "px " + font;
             ctx.fillStyle = color;
             ctx.textAlign = align;
